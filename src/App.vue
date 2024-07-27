@@ -15,6 +15,10 @@ import Footer from "./components/common/Footer.vue";
 
 <style scoped>
 .router-container {
-  min-height: calc(100vh - 163px);
+  display: flex;
+  justify-content: center;
+
+  margin: 88px 0px;
+  min-height: calc(100vh - 339px);
 }
 </style>
