@@ -53,18 +53,14 @@ export default {
     async connectWallet() {
       if (window.ethereum) {
         try {
-          // Initialize ethers provider
           const provider = new ethers.BrowserProvider(window.ethereum);
           const signer = await provider.getSigner();
 
           this.account = await signer.getAddress();
 
-          // Get the network information
-          this.network = await provider.getNetwork();
-          console.log(this.network.chainId);
+          const network = await provider.getNetwork();
 
-          // If not connected to the desired chain, request a network switch
-          if (this.network.chainId !== 656476n) {
+          if (network.chainId !== 656476n) {
             try {
               await window.ethereum.request({
                 method: "wallet_addEthereumChain",
