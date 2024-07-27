@@ -10,28 +10,33 @@
       <div class="menu-text" @click="navigateTo('/pool')">Pool</div>
     </div>
 
-    <div class="wallet-wrapper" v-if="!isConnected" @click="connectWallet">
+    <div class="wallet-wrapper" v-if="!account" @click="connectWallet">
       <div class="wallet-text">Connect Wallet</div>
     </div>
 
-    <div
-      class="wallet-wrapper-connected"
-      v-if="isConnected"
-      @click="connectWallet"
-    >
+    <div class="wallet-wrapper-connected" v-if="account">
       <img src="@/assets/metamask.png" alt="metamask" />
-      <div class="wallet-text-connected">0x1234...1234</div>
+      <div class="wallet-text-connected">
+        {{
+          `${account.substring(0, 6)}...${account.substring(
+            account.length - 4
+          )}`
+        }}
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { useRouter } from "vue-router";
+import { ethers } from "ethers";
 
 export default {
   data() {
     return {
-      isConnected: false,
+      account: null,
+      provider: null,
+      ethersProvider: null,
     };
   },
   setup() {
@@ -47,8 +52,50 @@ export default {
     isActiveRoute(routes) {
       return routes.includes(this.$route.path);
     },
-    connectWallet() {
-      this.isConnected = !this.isConnected;
+    async connectWallet() {
+      if (window.ethereum) {
+        try {
+          // Initialize ethers provider
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+
+          this.account = await signer.getAddress();
+
+          // Get the network information
+          this.network = await provider.getNetwork();
+          console.log(this.network.chainId);
+
+          // If not connected to the desired chain, request a network switch
+          if (this.network.chainId !== 656476n) {
+            try {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [
+                  {
+                    chainId: "0xa045c",
+                    chainName: "EDU testnet",
+                    rpcUrls: ["https://rpc.open-campus-codex.gelato.digital"],
+                    nativeCurrency: {
+                      name: "EDU",
+                      symbol: "EDU",
+                      decimals: 18,
+                    },
+                    blockExplorerUrls: [
+                      "https://opencampus-codex.blockscout.com",
+                    ],
+                  },
+                ],
+              });
+            } catch (error) {
+              console.error("Failed to switch network:", error);
+            }
+          }
+        } catch (error) {
+          console.error("Error connecting to Metamask:", error);
+        }
+      } else {
+        console.error("Metamask not detected. Please install Metamask.");
+      }
     },
   },
 };
