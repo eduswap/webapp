@@ -35,8 +35,6 @@ export default {
   data() {
     return {
       account: null,
-      provider: null,
-      ethersProvider: null,
     };
   },
   setup() {
