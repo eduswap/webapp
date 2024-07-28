@@ -210,6 +210,10 @@ export default {
   text-decoration-line: underline;
 }
 
+.pool-top-text:hover {
+  transform:scale(1.1); 
+}
+
 .pool-middle-wrapper {
   display: flex;
   flex-direction: column;
@@ -345,6 +349,9 @@ export default {
 .pool-list-btn-wrapper img {
   cursor: pointer;
 }
+.pool-list-btn-wrapper img:hover {
+  transform:scale(1.5); 
+}
 
 .pool-bottom-wrapper {
   display: flex;
@@ -355,6 +362,10 @@ export default {
 
 .pool-bottom-wrapper img {
   cursor: pointer;
+}
+
+.pool-bottom-wrapper img:hover {
+  transform:scale(1.5); 
 }
 
 .pool-bottom-page-wrapper {
@@ -422,5 +433,9 @@ export default {
   line-height: normal;
 
   cursor: pointer;
+}
+
+.pool-list-btn:hover {
+  transform:scale(1.5); 
 }
 </style>

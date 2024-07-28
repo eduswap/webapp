@@ -40,6 +40,9 @@
 .icon-wrapper img {
   cursor: pointer;
 }
+.icon-wrapper img:hover {
+  transform: scale(1.2);
+}
 
 .footer-text {
   color: #242a40;

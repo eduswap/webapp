@@ -138,6 +138,9 @@ export default {
 
   cursor: pointer;
 }
+.menu-text:hover {
+  transform: scale(1.1);
+}
 
 .wallet-wrapper {
   display: flex;
@@ -153,6 +156,9 @@ export default {
   background: #e5fafb;
 
   cursor: pointer;
+}
+.wallet-wrapper:hover {
+  transform: scale(1.1);
 }
 
 .wallet-text {
