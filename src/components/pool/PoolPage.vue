@@ -1,5 +1,5 @@
 <template>
-  <div class="pool-container" v-if="!loading">
+  <div class="pool-container" v-if="!loading && !showModal">
     <div class="pool-top-wrapper">
       <div
         class="pool-top-text"
@@ -48,7 +48,7 @@
           }}
         </div>
         <div class="pool-list-text flex">$1,000</div>
-        <div class="pool-list-btn-wrapper">
+        <div class="pool-list-btn-wrapper" @click="clickModal(item.pair)">
           <img src="@/assets/pool-btn.svg" alt="pool-btn" />
         </div>
       </div>
@@ -126,6 +126,8 @@
     </div>
   </div>
   <Ing v-if="loading" />
+
+  <PoolModal v-if="showModal" @closeModal="closeModal" :pooldata = "modalData" />
 </template>
 
 <script>
@@ -133,6 +135,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { ethers } from "ethers";
 
 import Ing from "@/components/common/Ing.vue";
+import PoolModal from "@/components/pool/PoolModal.vue";
 
 import usdcImg from "@/assets/token/usdc.png";
 import eduImg from "@/assets/token/edu.png";
@@ -143,6 +146,7 @@ import eduswapImg from "@/assets/token/eduswap.png";
 export default {
   components: {
     Ing,
+    PoolModal,
   },
   data() {
     return {
@@ -156,6 +160,8 @@ export default {
         "0x3FBA3ef10e452D1e8Cc6C0cf552A8A25b572Ec41": arbImg,
         "0x104A0F99728D5a79dbEbB4a0a58eCcb456e82411": eduswapImg,
       },
+      showModal: false,
+      modalData: null,
     };
   },
   setup() {
@@ -533,8 +539,6 @@ export default {
   methods: {
     updatePoolIndex(index) {
       this.poolIndex = index;
-
-      //
     },
     decreasePageIndex() {
       if (this.poolIndex == 0) {
@@ -565,6 +569,14 @@ export default {
     },
     formattedValue(number) {
       return number.toFixed(2);
+    },
+    closeModal() {
+      this.showModal = false;
+    },
+    clickModal(pairAddress) {
+      this.modalData = this.mypools.filter((item) => item.pair === pairAddress)[0];
+
+      this.showModal = true;
     },
   },
 
