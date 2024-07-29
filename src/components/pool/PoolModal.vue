@@ -1131,6 +1131,121 @@ export default {
         ];
 
         if (this.btnIndex == 0) {
+          if (!this.isApproved.token0) {
+            const contract0 = new ethers.Contract(
+              contractAddress0,
+              contractABI,
+              provider
+            );
+
+            const tx = await contract0
+              .connect(signer)
+              .approve(
+                "0xe745f43775B760958cd34ee83B3ab0c088F74630",
+                ethers.MaxUint256
+              );
+            await tx.wait();
+            console.log("deposit::approve:", tx.hash);
+
+            this.isApproved.token0 = true;
+          }
+
+          if (!this.isApproved.token1) {
+            const contract1 = new ethers.Contract(
+              contractAddress1,
+              contractABI,
+              provider
+            );
+
+            const tx = await contract1
+              .connect(signer)
+              .approve(
+                "0xe745f43775B760958cd34ee83B3ab0c088F74630",
+                ethers.MaxUint256
+              );
+            await tx.wait();
+            console.log("deposit::approve:", tx.hash);
+
+            this.isApproved.token1 = true;
+          }
+
+          const router = new ethers.Contract(
+            contractAddressRouter,
+            routerContractABI,
+            provider
+          );
+
+          // 1. token0 eth
+          if (
+            this.pooldata.token0 == "0xbd51800607E7C743a0e9b0D89D837058F4f42756"
+          ) {
+            console.log("1 token0 == eth");
+            const tx = await router
+              .connect(signer)
+              .addLiquidityETH(
+                this.pooldata.token1,
+                BigInt(this.amount1 * 10 ** 18) /
+                  BigInt(10 ** (18 - this.pooldata.decimals1)),
+                0,
+                0,
+                account,
+                ethers.MaxUint256,
+                {
+                  value:
+                    BigInt(this.amount0 * 10 ** 18) /
+                    BigInt(10 ** (18 - this.pooldata.decimals0)),
+                }
+              );
+            await tx.wait();
+            console.log("deposit::removeLiquidity:", tx.hash);
+          }
+          // 2. token1 eth
+          else if (
+            this.pooldata.token1 == "0xbd51800607E7C743a0e9b0D89D837058F4f42756"
+          ) {
+            console.log("2 token1 == eth");
+            const tx = await router
+              .connect(signer)
+              .addLiquidityETH(
+                this.pooldata.token0,
+                BigInt(this.amount0 * 10 ** 18) /
+                  BigInt(10 ** (18 - this.pooldata.decimals0)),
+                0,
+                0,
+                account,
+                ethers.MaxUint256,
+                {
+                  value:
+                    BigInt(this.amount1 * 10 ** 18) /
+                    BigInt(10 ** (18 - this.pooldata.decimals1)),
+                }
+              );
+            await tx.wait();
+            console.log("deposit::removeLiquidity:", tx.hash);
+          }
+          // 3. eth x
+          else {
+            console.log("3 token0 token1 != eth");
+            const tx = await router
+              .connect(signer)
+              .addLiquidity(
+                this.pooldata.token0,
+                this.pooldata.token1,
+                BigInt(this.amount0 * 10 ** 18) /
+                  BigInt(10 ** (18 - this.pooldata.decimals0)),
+                BigInt(this.amount1 * 10 ** 18) /
+                  BigInt(10 ** (18 - this.pooldata.decimals1)),
+                0,
+                0,
+                account,
+                ethers.MaxUint256
+              );
+            await tx.wait();
+            console.log("deposit::removeLiquidity:", tx.hash);
+          }
+          this.amount0 = 0;
+          this.amount1 = 0;
+          this.txStatus = "success";
         } else if (this.btnIndex == 1 && this.amountlp > 0) {
           if (!this.isApproved.tokenLp) {
             const contractLp = new ethers.Contract(
@@ -1198,21 +1313,9 @@ export default {
             await tx.wait();
             console.log("withdraw::removeLiquidityETH:", tx.hash);
           }
-
           // 3. eth x
           else {
             console.log("3 token0 token1 != eth");
-            console.log(
-              this.pooldata.token0,
-              this.pooldata.token1,
-              (BigInt(this.pooldata.mysupply) *
-                BigInt(Math.floor(this.amountlp * 10000))) /
-                1000000n,
-              0,
-              0,
-              account,
-              ethers.MaxUint256
-            );
             const tx = await router
               .connect(signer)
               .removeLiquidity(
