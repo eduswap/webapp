@@ -25,49 +25,26 @@
         <div class="pool-title-text vol">Volume(24h)</div>
         <div class="pool-title-text btn"></div>
       </div>
-      <div class="pool-list-wrapper">
-        <div class="pool-list-id-text">1</div>
+      <div v-for="(item, index) in pools" class="pool-list-wrapper">
+        <div class="pool-list-id-text">{{ index + 1 }}</div>
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
-            <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/dai.png" alt="token" />
+            <img :src="imgSource[item.token0]" alt="token" />
+            <img :src="imgSource[item.token1]" alt="token" />
           </div>
-          <div class="pool-list-pool-text">USDC/DAI</div>
+          <div class="pool-list-pool-text">
+            {{ `${item.symbol0}/${item.symbol1}` }}
+          </div>
         </div>
         <div class="pool-list-apr-text">12.12%</div>
-        <div class="pool-list-text flex">$12,000</div>
-        <div class="pool-list-text flex">$1,000</div>
-        <div class="pool-list-btn-wrapper">
-          <img src="@/assets/pool-btn.svg" alt="pool-btn" />
+        <div class="pool-list-text flex">
+          ${{
+            formattedLiquidity(
+              item.reserve0 / 10 ** item.decimals0 +
+                item.reserve1 / 10 ** item.decimals1
+            )
+          }}
         </div>
-      </div>
-      <div class="pool-list-wrapper">
-        <div class="pool-list-id-text">2</div>
-        <div class="pool-list-pool-wrapper">
-          <div class="pool-list-pool-icon-wrapper">
-            <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/dai.png" alt="token" />
-          </div>
-          <div class="pool-list-pool-text">USDC/DAI</div>
-        </div>
-        <div class="pool-list-apr-text">12.12%</div>
-        <div class="pool-list-text flex">$12,000</div>
-        <div class="pool-list-text flex">$1,000</div>
-        <div class="pool-list-btn-wrapper">
-          <img src="@/assets/pool-btn.svg" alt="pool-btn" />
-        </div>
-      </div>
-      <div class="pool-list-wrapper">
-        <div class="pool-list-id-text">3</div>
-        <div class="pool-list-pool-wrapper">
-          <div class="pool-list-pool-icon-wrapper">
-            <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/dai.png" alt="token" />
-          </div>
-          <div class="pool-list-pool-text">USDC/DAI</div>
-        </div>
-        <div class="pool-list-apr-text">12.12%</div>
-        <div class="pool-list-text flex">$12,000</div>
         <div class="pool-list-text flex">$1,000</div>
         <div class="pool-list-btn-wrapper">
           <img src="@/assets/pool-btn.svg" alt="pool-btn" />
@@ -89,7 +66,7 @@
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/dai.png" alt="token" />
+            <img src="@/assets/token/edu.png" alt="token" />
           </div>
           <div class="pool-list-pool-text">USDC/DAI</div>
         </div>
@@ -109,7 +86,7 @@
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/dai.png" alt="token" />
+            <img src="@/assets/token/edu.png" alt="token" />
           </div>
           <div class="pool-list-pool-text">USDC/DAI</div>
         </div>
@@ -129,7 +106,7 @@
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/dai.png" alt="token" />
+            <img src="@/assets/token/edu.png" alt="token" />
           </div>
           <div class="pool-list-pool-text">USDC/DAI</div>
         </div>
@@ -160,15 +137,326 @@
 </template>
 
 <script>
+import { ref, onMounted, onUnmounted } from "vue";
+import { ethers } from "ethers";
+
+import usdcImg from "@/assets/token/usdc.png"
+import eduImg from "@/assets/token/edu.png"
+import ethImg from "@/assets/token/eth.png"
+import arbImg from "@/assets/token/arb.png"
+import eduswapImg from "@/assets/token/eduswap.png"
+
 export default {
   data() {
     return {
       poolIndex: 0,
+      imgSource: {
+        "0x7aFB87aE9E37c365955012527f8a9039D6F2CA30": usdcImg,
+        "0xbd51800607E7C743a0e9b0D89D837058F4f42756": eduImg,
+        "0x90f2F4E97Eb6B62D9049D07C6f6877FD171a9a0F": ethImg,
+        "0x3FBA3ef10e452D1e8Cc6C0cf552A8A25b572Ec41": arbImg,
+        "0x104A0F99728D5a79dbEbB4a0a58eCcb456e82411": eduswapImg,
+      }
+    };
+  },
+  setup() {
+    const time = 10;
+    let pools = ref([]);
+    let intervalId = null;
+    let countdownIntervalId = null;
+
+    const getPoolData = async () => {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const contractAddress = "0x1a15e70a5a9319cc0508F84aCaD09976d9938e29";
+      const contractABI = [
+        {
+          inputs: [
+            {
+              internalType: "uint256[]",
+              name: "poolIds",
+              type: "uint256[]",
+            },
+            {
+              internalType: "address",
+              name: "user",
+              type: "address",
+            },
+          ],
+          name: "getMyPoolDatas",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "pair",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "token0",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "token1",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "name0",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "name1",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "symbol0",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "symbol1",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "decimals0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "decimals1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "reserve0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "reserve1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "balance0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "balance1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "price0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "price1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "supply",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "mysupply",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct EduswapV2View.MyPoolData[]",
+              name: "datas",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256[]",
+              name: "poolIds",
+              type: "uint256[]",
+            },
+          ],
+          name: "getPoolDatas",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "pair",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "token0",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "token1",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "name0",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "name1",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "symbol0",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "symbol1",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "decimals0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "decimals1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "reserve0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "reserve1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "price0",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "price1",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "supply",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct EduswapV2View.PoolData[]",
+              name: "datas",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
+      const contract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        provider
+      );
+
+      try {
+        const datas = await contract.getPoolDatas([0, 1, 2]);
+        pools.value = [];
+        for (let i = 0; i < datas.length; i++) {
+          const [
+            pair,
+            token0,
+            token1,
+            name0,
+            name1,
+            symbol0,
+            symbol1,
+            decimals0,
+            decimals1,
+            reserve0,
+            reserve1,
+            price0,
+            price1,
+            supply,
+          ] = datas[i];
+
+          pools.value.push({
+            pair: pair.toString(),
+            token0: token0.toString(),
+            token1: token1.toString(),
+            name0: name0.toString(),
+            name1: name1.toString(),
+            symbol0: symbol0.toString(),
+            symbol1: symbol1.toString(),
+            decimals0: decimals0.toString(),
+            decimals1: decimals1.toString(),
+            reserve0: reserve0.toString(),
+            reserve1: reserve1.toString(),
+            price0: price0.toString(),
+            price1: price1.toString(),
+            supply: supply.toString(),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching contract value:", error);
+      }
+    };
+
+    onMounted(() => {
+      getPoolData();
+      intervalId = setInterval(() => {
+        getPoolData();
+      }, time * 1000);
+    });
+
+    // 컴포넌트가 언마운트될 때 인터벌 정리
+    onUnmounted(() => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+      }
+    });
+
+    return {
+      pools,
     };
   },
   methods: {
     updatePoolIndex(index) {
       this.poolIndex = index;
+
+      //
+    },
+    formattedLiquidity(number) {
+      if (number < 10 ** 3) {
+        return number.toFixed(2);
+      } else if (number < 10 ** 6) {
+        return (number / 10 ** 3).toFixed(2).toString() + "K";
+      } else if (number < 10 ** 9) {
+        return (number / 10 ** 6).toFixed(2).toString() + "M";
+      }
     },
   },
 };
@@ -211,7 +499,7 @@ export default {
 }
 
 .pool-top-text:hover {
-  transform:scale(1.1); 
+  transform: scale(1.1);
 }
 
 .pool-middle-wrapper {
@@ -350,7 +638,7 @@ export default {
   cursor: pointer;
 }
 .pool-list-btn-wrapper img:hover {
-  transform:scale(1.5); 
+  transform: scale(1.5);
 }
 
 .pool-bottom-wrapper {
@@ -365,7 +653,7 @@ export default {
 }
 
 .pool-bottom-wrapper img:hover {
-  transform:scale(1.5); 
+  transform: scale(1.5);
 }
 
 .pool-bottom-page-wrapper {
@@ -436,6 +724,6 @@ export default {
 }
 
 .pool-list-btn:hover {
-  transform:scale(1.5); 
+  transform: scale(1.5);
 }
 </style>
