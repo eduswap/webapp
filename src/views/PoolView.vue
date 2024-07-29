@@ -1,5 +1,5 @@
 <template>
-  <div class="pool-container">
+  <div class="pool-container" v-if="!loading">
     <div class="pool-top-wrapper">
       <div
         class="pool-top-text"
@@ -26,7 +26,7 @@
         <div class="pool-title-text btn"></div>
       </div>
       <div v-for="(item, index) in filteredPools" class="pool-list-wrapper">
-        <div class="pool-list-id-text">{{ pageIndex * 4 - 4 + 1 }}</div>
+        <div class="pool-list-id-text">{{ pageIndex * 4 - 4 + index + 1 }}</div>
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img :src="imgSource[item.token0]" alt="token" />
@@ -64,7 +64,9 @@
         <div class="pool-title-text btn"></div>
       </div>
       <div v-for="(item, index) in filteredMyPools" class="pool-list-wrapper">
-        <div class="pool-list-id-text">{{ mypageIndex * 4 - 4 + 1 }}</div>
+        <div class="pool-list-id-text">
+          {{ mypageIndex * 4 - 4 + index + 1 }}
+        </div>
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img :src="imgSource[item.token0]" alt="token" />
@@ -123,11 +125,14 @@
       />
     </div>
   </div>
+  <Ing v-if="loading" />
 </template>
 
 <script>
 import { ref, onMounted, onUnmounted } from "vue";
 import { ethers } from "ethers";
+
+import Ing from "../components/common/Ing.vue";
 
 import usdcImg from "@/assets/token/usdc.png";
 import eduImg from "@/assets/token/edu.png";
@@ -136,6 +141,9 @@ import arbImg from "@/assets/token/arb.png";
 import eduswapImg from "@/assets/token/eduswap.png";
 
 export default {
+  components: {
+    Ing,
+  },
   data() {
     return {
       poolIndex: 0,
@@ -155,14 +163,32 @@ export default {
     const poolIds = [0, 1, 2, 3, 4];
     let pools = ref([]);
     let mypools = ref([]);
+    let loading = ref(false);
     let account = null;
     let intervalId = null;
     let countdownIntervalId = null;
+
+    const checkMetaMaskConnection = async () => {
+      if (typeof window.ethereum !== "undefined") {
+        try {
+          const accounts = await window.ethereum.request({
+            method: "eth_requestAccounts",
+          });
+          return accounts.length > 0;
+        } catch (error) {
+          console.error("Error checking MetaMask connection:", error);
+          return false;
+        }
+      } else {
+        return false;
+      }
+    };
 
     const getPoolData = async () => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const chainId = (await provider.getNetwork()).chainId;
 
+      loading.value = true;
       if (chainId == 656476n) {
         const contractAddress = "0x1a15e70a5a9319cc0508F84aCaD09976d9938e29";
         const contractABI = [
@@ -420,10 +446,11 @@ export default {
           console.error("Error fetching contract value:", error);
         }
 
-        const signer = await provider.getSigner();
-        account = await signer.getAddress();
+        const isConnected = checkMetaMaskConnection();
+        if (isConnected) {
+          const signer = await provider.getSigner();
+          account = await signer.getAddress();
 
-        if (account) {
           try {
             const newMyPools = [];
             const datas = await contract.getMyPoolDatas(poolIds, account);
@@ -475,6 +502,7 @@ export default {
           }
         }
       }
+      loading.value = false;
     };
 
     onMounted(() => {
@@ -495,6 +523,7 @@ export default {
     });
 
     return {
+      loading,
       mypools,
       pools,
     };
