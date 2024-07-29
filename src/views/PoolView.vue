@@ -188,8 +188,12 @@ export default {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const chainId = (await provider.getNetwork()).chainId;
 
-      loading.value = true;
       if (chainId == 656476n) {
+        loading.value = true;
+        setTimeout(() => {
+          loading.value = false;
+        }, 1000);
+
         const contractAddress = "0x1a15e70a5a9319cc0508F84aCaD09976d9938e29";
         const contractABI = [
           {
@@ -502,7 +506,6 @@ export default {
           }
         }
       }
-      loading.value = false;
     };
 
     onMounted(() => {
