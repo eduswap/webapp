@@ -39,9 +39,11 @@
         <div class="pool-list-apr-text">12.12%</div>
         <div class="pool-list-text flex">
           ${{
-            formattedLiquidity(
-              item.reserve0 / 10 ** item.decimals0 +
-                item.reserve1 / 10 ** item.decimals1
+            formattedValueKMB(
+              ((item.reserve0 / 10 ** item.decimals0) * item.price0) /
+                10 ** 18 +
+                ((item.reserve1 / 10 ** item.decimals1) * item.price1) /
+                  10 ** 18
             )
           }}
         </div>
@@ -58,64 +60,40 @@
         <div class="pool-title-text pool">Pool</div>
         <div class="pool-title-text share">Share</div>
         <div class="pool-title-text liqmy">Liquidity</div>
-        <div class="pool-title-text vol">Volume(24h)</div>
+        <!-- <div class="pool-title-text vol">Volume(24h)</div> -->
         <div class="pool-title-text btn"></div>
       </div>
-      <div class="pool-list-wrapper">
-        <div class="pool-list-id-text">1</div>
+      <div v-for="(item, index) in mypools" class="pool-list-wrapper">
+        <div class="pool-list-id-text">{{ index + 1 }}</div>
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
-            <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/edu.png" alt="token" />
+            <img :src="imgSource[item.token0]" alt="token" />
+            <img :src="imgSource[item.token1]" alt="token" />
           </div>
-          <div class="pool-list-pool-text">USDC/DAI</div>
-        </div>
-        <div class="pool-list-text share">0.01%</div>
-        <div class="pool-list-liquidity-wrapper">
-          <div class="pool-list-text liqmy">100 USDC + 101 DAI</div>
-          <div class="pool-list-sub-text">$201</div>
-        </div>
-        <div class="pool-list-text flex">$1,000</div>
-        <div class="pool-list-btn-wrapper">
-          <div class="pool-list-btn">+</div>
-          <div class="pool-list-btn">-</div>
-        </div>
-      </div>
-      <div class="pool-list-wrapper">
-        <div class="pool-list-id-text">1</div>
-        <div class="pool-list-pool-wrapper">
-          <div class="pool-list-pool-icon-wrapper">
-            <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/edu.png" alt="token" />
+          <div class="pool-list-pool-text">
+            {{ `${item.symbol0}/${item.symbol1}` }}
           </div>
-          <div class="pool-list-pool-text">USDC/DAI</div>
         </div>
-        <div class="pool-list-text share">0.01%</div>
+        <div class="pool-list-text share">
+          {{ formattedValueKMB((item.mysupply / item.supply) * 100) }}%
+        </div>
         <div class="pool-list-liquidity-wrapper">
-          <div class="pool-list-text liqmy">100 USDC + 101 DAI</div>
-          <div class="pool-list-sub-text">$201</div>
-        </div>
-        <div class="pool-list-text flex">$1,000</div>
-        <div class="pool-list-btn-wrapper">
-          <div class="pool-list-btn">+</div>
-          <div class="pool-list-btn">-</div>
-        </div>
-      </div>
-      <div class="pool-list-wrapper">
-        <div class="pool-list-id-text">1</div>
-        <div class="pool-list-pool-wrapper">
-          <div class="pool-list-pool-icon-wrapper">
-            <img src="@/assets/token/usdc.png" alt="token" />
-            <img src="@/assets/token/edu.png" alt="token" />
+          <div class="pool-list-text liqmy">
+            {{ formattedValue(item.reserve0 / 10 ** item.decimals0) }}
+            {{ item.symbol0 }} +
+            {{ formattedValue(item.reserve1 / 10 ** item.decimals1) }}
+            {{ item.symbol1 }}
           </div>
-          <div class="pool-list-pool-text">USDC/DAI</div>
+          <div class="pool-list-sub-text">
+            $
+            {{
+              formattedValueKMB(((item.reserve0 / 10 ** item.decimals0) * item.price0) /
+                10 ** 18 +
+              ((item.reserve1 / 10 ** item.decimals1) * item.price1) / 10 ** 18)
+            }}
+          </div>
         </div>
-        <div class="pool-list-text share">0.01%</div>
-        <div class="pool-list-liquidity-wrapper">
-          <div class="pool-list-text liqmy">100 USDC + 101 DAI</div>
-          <div class="pool-list-sub-text">$201</div>
-        </div>
-        <div class="pool-list-text flex">$1,000</div>
+        <!-- <div class="pool-list-text flex">$1,000</div> -->
         <div class="pool-list-btn-wrapper">
           <div class="pool-list-btn">+</div>
           <div class="pool-list-btn">-</div>
@@ -161,13 +139,14 @@ export default {
   },
   setup() {
     const time = 20;
+    const poolIds = [0, 1, 2, 3, 4, 5];
     let pools = ref([]);
+    let mypools = ref([]);
+    let account = null;
     let intervalId = null;
     let countdownIntervalId = null;
 
     const getPoolData = async () => {
-      pools.value = [];
-
       const provider = new ethers.BrowserProvider(window.ethereum);
       const chainId = (await provider.getNetwork()).chainId;
 
@@ -385,7 +364,8 @@ export default {
         );
 
         try {
-          const datas = await contract.getPoolDatas([0, 1, 2]);
+          const newPools = [];
+          const datas = await contract.getPoolDatas(poolIds);
           for (let i = 0; i < datas.length; i++) {
             const [
               pair,
@@ -404,7 +384,7 @@ export default {
               supply,
             ] = datas[i];
 
-            pools.value.push({
+            newPools.push({
               pair: pair.toString(),
               token0: token0.toString(),
               token1: token1.toString(),
@@ -420,9 +400,66 @@ export default {
               price1: price1.toString(),
               supply: supply.toString(),
             });
+
+            pools.value = newPools;
           }
         } catch (error) {
           console.error("Error fetching contract value:", error);
+        }
+
+        const signer = await provider.getSigner();
+        account = await signer.getAddress();
+
+        if (account) {
+          try {
+            const newMyPools = [];
+            const datas = await contract.getMyPoolDatas(poolIds, account);
+            for (let i = 0; i < datas.length; i++) {
+              const [
+                pair,
+                token0,
+                token1,
+                name0,
+                name1,
+                symbol0,
+                symbol1,
+                decimals0,
+                decimals1,
+                reserve0,
+                reserve1,
+                balance0,
+                balance1,
+                price0,
+                price1,
+                supply,
+                mysupply,
+              ] = datas[i];
+
+              newMyPools.push({
+                pair: pair.toString(),
+                token0: token0.toString(),
+                token1: token1.toString(),
+                name0: name0.toString(),
+                name1: name1.toString(),
+                symbol0: symbol0.toString(),
+                symbol1: symbol1.toString(),
+                decimals0: decimals0.toString(),
+                decimals1: decimals1.toString(),
+                reserve0: reserve0.toString(),
+                reserve1: reserve1.toString(),
+                balance0: balance0.toString(),
+                balance1: balance1.toString(),
+                price0: price0.toString(),
+                price1: price1.toString(),
+                supply: supply.toString(),
+                mysupply: mysupply.toString(),
+              });
+
+              mypools.value = newMyPools;
+            }
+          } catch (error) {
+            console.error("Error fetching contract value:", error);
+          }
         }
       }
     };
@@ -445,6 +482,7 @@ export default {
     });
 
     return {
+      mypools,
       pools,
     };
   },
@@ -454,7 +492,7 @@ export default {
 
       //
     },
-    formattedLiquidity(number) {
+    formattedValueKMB(number) {
       if (number < 10 ** 3) {
         return number.toFixed(2);
       } else if (number < 10 ** 6) {
@@ -462,6 +500,9 @@ export default {
       } else if (number < 10 ** 9) {
         return (number / 10 ** 6).toFixed(2).toString() + "M";
       }
+    },
+    formattedValue(number) {
+      return number.toFixed(2);
     },
   },
 };
@@ -536,7 +577,7 @@ export default {
   width: 30px;
 }
 .pool-title-text.pool {
-  width: 234px;
+  width: 240px;
 }
 .pool-title-text.apr,
 .pool-title-text.liq,
@@ -544,10 +585,10 @@ export default {
   flex: 1 0 0;
 }
 .pool-title-text.share {
-  width: 100px;
+  width: 140px;
 }
 .pool-title-text.liqmy {
-  width: 240px;
+  width: 352px;
 }
 .pool-title-text.btn {
   width: 30px;
@@ -575,7 +616,7 @@ export default {
 
 .pool-list-pool-wrapper {
   display: flex;
-  width: 234px;
+  width: 240px;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
@@ -624,10 +665,10 @@ export default {
   flex: 1 0 0;
 }
 .pool-list-text.share {
-  width: 100px;
+  width: 140px;
 }
 .pool-list-text.liqmy {
-  width: 240px;
+  width: 352px;
 }
 
 .pool-list-btn-wrapper {
