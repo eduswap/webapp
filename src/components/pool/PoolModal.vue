@@ -36,10 +36,14 @@
         <div class="pool-modal-input-box-wrapper">
           <div class="pool-modal-input-select-container">
             <div class="pool-modal-input-select-wrapper">
-              <div class="pool-modal-input-select-text">half</div>
+              <div class="pool-modal-input-select-text" @click="halfAmount0">
+                half
+              </div>
             </div>
             <div class="pool-modal-input-select-wrapper">
-              <div class="pool-modal-input-select-text">max</div>
+              <div class="pool-modal-input-select-text" @click="maxAmount0">
+                max
+              </div>
             </div>
           </div>
           <div class="pool-modal-input-token-wrapper">
@@ -69,10 +73,14 @@
         <div class="pool-modal-input-box-wrapper">
           <div class="pool-modal-input-select-container">
             <div class="pool-modal-input-select-wrapper">
-              <div class="pool-modal-input-select-text">half</div>
+              <div class="pool-modal-input-select-text" @click="halfAmount1">
+                half
+              </div>
             </div>
             <div class="pool-modal-input-select-wrapper">
-              <div class="pool-modal-input-select-text">max</div>
+              <div class="pool-modal-input-select-text" @click="maxAmount1">
+                max
+              </div>
             </div>
           </div>
           <div class="pool-modal-input-token-wrapper">
@@ -88,7 +96,7 @@
               </div>
             </div>
             <div class="pool-modal-input-right-wrapper">
-              <input class="pool-modal-value" type="number" v-model="amount0" />
+              <input class="pool-modal-value" type="number" v-model="amount1" />
               <div class="pool-modal-input-balance-text">
                 Balance:
                 {{ (pooldata.balance1 / 10 ** pooldata.decimals1).toFixed(4) }}
@@ -104,10 +112,14 @@
         <div class="pool-modal-input-box-wrapper">
           <div class="pool-modal-input-select-container">
             <div class="pool-modal-input-select-wrapper">
-              <div class="pool-modal-input-select-text">half</div>
+              <div class="pool-modal-input-select-text" @click="halfAmountLp">
+                half
+              </div>
             </div>
             <div class="pool-modal-input-select-wrapper">
-              <div class="pool-modal-input-select-text">max</div>
+              <div class="pool-modal-input-select-text" @click="maxAmountLp">
+                max
+              </div>
             </div>
           </div>
           <div class="pool-modal-input-token-wrapper">
@@ -128,7 +140,8 @@
                 <input
                   class="pool-modal-value"
                   type="number"
-                  v-model="amount0"
+                  max="100"
+                  v-model="amountlp"
                 />
                 <div class="pool-modal-value-percentage-text">%</div>
               </div>
@@ -190,6 +203,7 @@ export default {
       btnIndex: 0,
       amount0: 0,
       amount1: 0,
+      amountlp: 0,
       imgSource: {
         "0x7aFB87aE9E37c365955012527f8a9039D6F2CA30": usdcImg,
         "0xbd51800607E7C743a0e9b0D89D837058F4f42756": eduImg,
@@ -202,9 +216,45 @@ export default {
   methods: {
     updateBtnIndex(index) {
       this.btnIndex = index;
+
+      this.amount0 = 0;
+      this.amount1 = 0;
+      this.amountlp = 0;
     },
     closeModal() {
       this.$emit("closeModal");
+    },
+    halfAmount0() {
+      this.amount0 = this.pooldata.balance0 / 10 ** this.pooldata.decimals0 / 2;
+    },
+    halfAmount1() {
+      this.amount1 = this.pooldata.balance1 / 10 ** this.pooldata.decimals1 / 2;
+    },
+    halfAmountLp() {
+      this.amountlp = 50;
+    },
+    maxAmount0() {
+      this.amount0 = this.pooldata.balance0 / 10 ** this.pooldata.decimals0;
+    },
+    maxAmount1() {
+      this.amount1 = this.pooldata.balance1 / 10 ** this.pooldata.decimals1;
+    },
+    maxAmountLp() {
+      this.amountlp = 100;
+    },
+  },
+  watch: {
+    amount0(newAmount0) {
+      this.amount1 =
+        (newAmount0 *
+          (this.pooldata.reserve1 / 10 ** this.pooldata.decimals1)) /
+        (this.pooldata.reserve0 / 10 ** this.pooldata.decimals0);
+    },
+    amount1(newAmount1) {
+      this.amount0 =
+        (newAmount1 *
+          (this.pooldata.reserve0 / 10 ** this.pooldata.decimals0)) /
+        (this.pooldata.reserve1 / 10 ** this.pooldata.decimals1);
     },
   },
 };
@@ -336,7 +386,7 @@ export default {
 }
 
 .pool-modal-detials-list-slipage-text {
-  color: #E5FAFB;
+  color: #e5fafb;
   text-align: right;
   font-family: Inter;
   font-size: 10px;
@@ -529,6 +579,10 @@ export default {
   cursor: pointer;
 }
 
+.pool-modal-tx-btn-wrapper:hover {
+    transform: scale(1.05);
+}
+
 .pool-modal-tx-btn-text {
   color: #fff;
   text-align: right;
@@ -547,7 +601,6 @@ export default {
 }
 
 .pool-modal-value-percentage-text {
-
   color: #e5fafb;
   font-family: Inter;
   font-size: 12px;
