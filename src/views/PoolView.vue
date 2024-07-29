@@ -159,7 +159,7 @@ export default {
     };
   },
   setup() {
-    const time = 20;
+    const time = 60;
     const poolIds = [0, 1, 2, 3, 4];
     let pools = ref([]);
     let mypools = ref([]);
@@ -189,11 +189,6 @@ export default {
       const chainId = (await provider.getNetwork()).chainId;
 
       if (chainId == 656476n) {
-        loading.value = true;
-        setTimeout(() => {
-          loading.value = false;
-        }, 1000);
-
         const contractAddress = "0x1a15e70a5a9319cc0508F84aCaD09976d9938e29";
         const contractABI = [
           {
@@ -509,6 +504,10 @@ export default {
     };
 
     onMounted(() => {
+      loading.value = true;
+      setTimeout(() => {
+        loading.value = false;
+      }, 1000);
       getPoolData();
       intervalId = setInterval(() => {
         getPoolData();
