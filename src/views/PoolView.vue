@@ -25,8 +25,8 @@
         <div class="pool-title-text vol">Volume(24h)</div>
         <div class="pool-title-text btn"></div>
       </div>
-      <div v-for="(item, index) in pools" class="pool-list-wrapper">
-        <div class="pool-list-id-text">{{ index + 1 }}</div>
+      <div v-for="(item, index) in filteredPools" class="pool-list-wrapper">
+        <div class="pool-list-id-text">{{ pageIndex * 4 - 4 + 1 }}</div>
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img :src="imgSource[item.token0]" alt="token" />
@@ -63,8 +63,8 @@
         <!-- <div class="pool-title-text vol">Volume(24h)</div> -->
         <div class="pool-title-text btn"></div>
       </div>
-      <div v-for="(item, index) in mypools" class="pool-list-wrapper">
-        <div class="pool-list-id-text">{{ index + 1 }}</div>
+      <div v-for="(item, index) in filteredMyPools" class="pool-list-wrapper">
+        <div class="pool-list-id-text">{{ mypageIndex * 4 - 4 + 1 }}</div>
         <div class="pool-list-pool-wrapper">
           <div class="pool-list-pool-icon-wrapper">
             <img :src="imgSource[item.token0]" alt="token" />
@@ -87,9 +87,12 @@
           <div class="pool-list-sub-text">
             $
             {{
-              formattedValueKMB(((item.reserve0 / 10 ** item.decimals0) * item.price0) /
-                10 ** 18 +
-              ((item.reserve1 / 10 ** item.decimals1) * item.price1) / 10 ** 18)
+              formattedValueKMB(
+                ((item.reserve0 / 10 ** item.decimals0) * item.price0) /
+                  10 ** 18 +
+                  ((item.reserve1 / 10 ** item.decimals1) * item.price1) /
+                    10 ** 18
+              )
             }}
           </div>
         </div>
@@ -101,15 +104,23 @@
       </div>
     </div>
     <div class="pool-bottom-wrapper">
-      <img src="@/assets/arrow-left.svg" alt="arrow" />
+      <img
+        src="@/assets/arrow-left.svg"
+        alt="arrow"
+        @click="decreasePageIndex"
+      />
       <div class="pool-bottom-page-wrapper">
         <div class="pool-bottom-page-cur-wrapper">
-          <div class="pool-bottom-page-cur-text">1</div>
+          <div class="pool-bottom-page-cur-text">{{ currentPageIndex }}</div>
         </div>
         <div class="pool-bottom-page-text">/</div>
-        <div class="pool-bottom-page-text">3</div>
+        <div class="pool-bottom-page-text">{{ endPageIndex }}</div>
       </div>
-      <img src="@/assets/arrow-right.svg" alt="arrow" />
+      <img
+        src="@/assets/arrow-right.svg"
+        alt="arrow"
+        @click="increasePageIndex"
+      />
     </div>
   </div>
 </template>
@@ -128,6 +139,8 @@ export default {
   data() {
     return {
       poolIndex: 0,
+      pageIndex: 1,
+      mypageIndex: 1,
       imgSource: {
         "0x7aFB87aE9E37c365955012527f8a9039D6F2CA30": usdcImg,
         "0xbd51800607E7C743a0e9b0D89D837058F4f42756": eduImg,
@@ -139,7 +152,7 @@ export default {
   },
   setup() {
     const time = 20;
-    const poolIds = [0, 1, 2, 3, 4, 5];
+    const poolIds = [0, 1, 2, 3, 4];
     let pools = ref([]);
     let mypools = ref([]);
     let account = null;
@@ -492,6 +505,24 @@ export default {
 
       //
     },
+    decreasePageIndex() {
+      if (this.poolIndex == 0) {
+        if (this.pageIndex > 1) this.pageIndex--;
+      } else {
+        if (this.mypageIndex > 1) this.mypageIndex--;
+      }
+    },
+    increasePageIndex() {
+      if (this.poolIndex == 0) {
+        if (Math.floor((this.pools.length - 1) / 4) + 1 > this.pageIndex) {
+          this.pageIndex++;
+        }
+      } else {
+        if (Math.floor((this.mypools.length - 1) / 4) + 1 > this.mypageIndex) {
+          this.mypageIndex++;
+        }
+      }
+    },
     formattedValueKMB(number) {
       if (number < 10 ** 3) {
         return number.toFixed(2);
@@ -503,6 +534,37 @@ export default {
     },
     formattedValue(number) {
       return number.toFixed(2);
+    },
+  },
+
+  computed: {
+    endPageIndex() {
+      if (this.poolIndex == 0) {
+        if (this.pools.length == 0) return 1;
+        return Math.floor((this.pools.length - 1) / 4) + 1;
+      } else {
+        if (this.mypools.length == 0) return 1;
+        return Math.floor((this.mypools.length - 1) / 4) + 1;
+      }
+    },
+    filteredPools() {
+      return this.pools.filter(
+        (item, index) =>
+          index >= this.pageIndex * 4 - 4 && index < this.pageIndex * 4
+      );
+    },
+    filteredMyPools() {
+      return this.mypools.filter(
+        (item, index) =>
+          index >= this.mypageIndex * 4 - 4 && index < this.mypageIndex * 4
+      );
+    },
+    currentPageIndex() {
+      if (this.poolIndex == 0) {
+        return this.pageIndex;
+      } else {
+        return this.mypageIndex;
+      }
     },
   },
 };
