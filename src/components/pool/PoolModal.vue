@@ -1577,13 +1577,13 @@ export default {
   display: flex;
   width: 150px;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 .pool-modal-input-left-wrapper2 {
   display: flex;
   width: 240px;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .pool-modal-input-left-wrapper img,
