@@ -1408,7 +1408,7 @@ export default {
 .pool-modal-back-text {
   color: #98cdc9;
   font-family: Inter;
-  font-size: 14px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 600;
   line-height: normal;
@@ -1446,7 +1446,7 @@ export default {
 .pool-modal-btn-text {
   color: #181d2f;
   font-family: Inter;
-  font-size: 12px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 600;
   line-height: normal;
@@ -1455,7 +1455,7 @@ export default {
 .pool-modal-btn-text.is-active {
   color: #98cdc9;
   font-family: Inter;
-  font-size: 12px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 600;
   line-height: normal;
@@ -1488,7 +1488,7 @@ export default {
 .pool-modal-detials-list-text {
   color: #98cdc9;
   font-family: Inter;
-  font-size: 10px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -1502,7 +1502,7 @@ export default {
   color: #98cdc9;
   text-align: right;
   font-family: Inter;
-  font-size: 10px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -1512,7 +1512,7 @@ export default {
   color: #e5fafb;
   text-align: right;
   font-family: Inter;
-  font-size: 10px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 700;
   line-height: normal;
@@ -1541,7 +1541,7 @@ export default {
 .pool-modal-input-select-wrapper {
   display: flex;
   width: 40px;
-  height: 15px;
+  height: 16px;
   padding: 2px 6px;
   justify-content: center;
   align-items: center;
@@ -1556,7 +1556,7 @@ export default {
   color: #98cdc9;
   text-align: right;
   font-family: Inter;
-  font-size: 10px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 400;
   line-height: normal;
@@ -1612,9 +1612,9 @@ export default {
 .pool-modal-input-token-name-text {
   color: #98cdc9;
   font-family: Inter;
-  font-size: 8px;
+  font-size: 10px;
   font-style: normal;
-  font-weight: 600;
+  font-weight: 500;
   line-height: normal;
 }
 
@@ -1640,7 +1640,7 @@ export default {
   color: #98cdc9;
   text-align: right;
   font-family: Inter;
-  font-size: 9px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 500;
   line-height: normal;
