@@ -1,5 +1,5 @@
 <template>
-  <div class="swap-container">
+  <div class="swap-container" v-if="!showFromModal && !showToModal">
     <div class="swap-top-wrapper">
       <div class="swap-top-text">Swap</div>
     </div>
@@ -20,7 +20,7 @@
           <div class="swap-input-left-wrapper">
             <img :src="fromTokenInfo.img" alt="token" />
             <div class="swap-input-token-name-wrapper">
-              <div class="swap-input-token-symbol-btn">
+              <div class="swap-input-token-symbol-btn" @click="clickFromModal">
                 <div class="swap-input-token-symbol-text">
                   {{ fromTokenInfo.symbol }}
                 </div>
@@ -53,7 +53,7 @@
           <div class="swap-input-left-wrapper">
             <img :src="toTokenInfo.img" alt="token" />
             <div class="swap-input-token-name-wrapper">
-              <div class="swap-input-token-symbol-btn">
+              <div class="swap-input-token-symbol-btn" @click="clickToModal">
                 <div class="swap-input-token-symbol-text">
                   {{ toTokenInfo.symbol }}
                 </div>
@@ -123,17 +123,49 @@
       <div class="swap-tx-btn-text">Swap</div>
     </div>
   </div>
+
+  <SwapModal
+    v-if="showFromModal"
+    :tokenInfo="tokenInfos"
+    :closeModal="closeFromModal"
+  />
+  <SwapModal
+    v-if="showToModal"
+    :tokenInfo="tokenInfos"
+    :closeModal="closeToModal"
+  />
 </template>
 
 <script>
 import { ref, onMounted } from "vue";
 import { getTokens } from "@/js/contract_interacter.js";
+import SwapModal from "@/components/swap/SwapModal.vue";
 
 export default {
+  components: {
+    SwapModal,
+  },
   setup() {
+    let showFromModal = ref(false);
+    let showToModal = ref(false);
+
     let tokenInfos = ref([]);
     let fromTokenInfo = ref({});
     let toTokenInfo = ref({});
+
+    const closeFromModal = () => {
+      showFromModal.value = false;
+    };
+    const closeToModal = () => {
+      showToModal.value = false;
+    };
+
+    const clickFromModal = () => {
+      showFromModal.value = true;
+    };
+    const clickToModal = () => {
+      showToModal.value = true;
+    };
 
     onMounted(() => {
       tokenInfos.value = getTokens();
@@ -147,6 +179,12 @@ export default {
       toTokenInfo,
       amount0: 0,
       amount1: 0,
+      showFromModal,
+      showToModal,
+      closeFromModal,
+      clickFromModal,
+      closeToModal,
+      clickToModal,
     };
   },
 };
