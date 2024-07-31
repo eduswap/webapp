@@ -33,7 +33,9 @@
           </div>
           <div class="swap-input-right-wrapper">
             <input class="swap-value" type="number" v-model="amount0" />
-            <div class="swap-input-balance-text">Balance: 12</div>
+            <div class="swap-input-balance-text">
+              Balance: {{ fromTokenInfo.balance }}
+            </div>
           </div>
         </div>
       </div>
@@ -66,12 +68,14 @@
           </div>
           <div class="swap-input-right-wrapper">
             <input class="swap-value" type="number" v-model="amount1" />
-            <div class="swap-input-balance-text">Balance: 12</div>
+            <div class="swap-input-balance-text">
+              Balance: {{ toTokenInfo.balance }}
+            </div>
           </div>
         </div>
       </div>
-      <div class="swap-next">
-        <img src="@/assets/arrow-down.svg" alt="" />
+      <div class="swap-arrow-down" @click="reverseTokenInfo">
+        <img src="@/assets/arrow-down.svg" alt="arrow-down" />
       </div>
     </div>
     <div class="swap-detials-wrapper">
@@ -140,7 +144,13 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { getTokens } from "@/js/contract_interacter.js";
+import {
+  attach,
+  getAccount,
+  getTokens,
+  updateTokenBalance,
+  updateAccount,
+} from "@/js/contract_interacter.js";
 import SwapModal from "@/components/swap/SwapModal.vue";
 
 let showFromModal = ref(false);
@@ -183,7 +193,25 @@ const updateToToken = (tokenInfo) => {
   showToModal.value = false;
 };
 
-onMounted(() => {
+const reverseTokenInfo = () => {
+  const tempFromTokenInfo = fromTokenInfo.value;
+  const tempToTokenInfo = toTokenInfo.value;
+
+  fromTokenInfo.value = tempToTokenInfo;
+  toTokenInfo.value = tempFromTokenInfo;
+};
+
+onMounted(async () => {
+  attach();
+
+  await updateAccount();
+
+  const account = getAccount();
+
+  if (account != null) {
+    await updateTokenBalance(account);
+  }
+
   tokenInfos.value = getTokens();
   fromTokenInfo.value = tokenInfos.value[1];
   toTokenInfo.value = tokenInfos.value[0];
@@ -429,7 +457,7 @@ onMounted(() => {
   border: none;
 }
 
-.swap-next {
+.swap-arrow-down {
   display: flex;
   width: 24px;
   height: 24px;
@@ -443,6 +471,21 @@ onMounted(() => {
 
   border-radius: 6px;
   background: #98cdc9;
+
+  cursor: pointer;
+}
+
+.swap-arrow-down:hover {
+  animation: halfSpin 0.7s forwards;
+}
+
+@keyframes halfSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-180deg);
+  }
 }
 
 .swap-detials-wrapper {
