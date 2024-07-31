@@ -138,76 +138,56 @@
   />
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from "vue";
 import { getTokens } from "@/js/contract_interacter.js";
 import SwapModal from "@/components/swap/SwapModal.vue";
 
-export default {
-  components: {
-    SwapModal,
-  },
-  setup() {
-    let showFromModal = ref(false);
-    let showToModal = ref(false);
+let showFromModal = ref(false);
+let showToModal = ref(false);
 
-    let tokenInfos = ref([]);
-    let fromTokenInfo = ref({});
-    let toTokenInfo = ref({});
+let amount0 = ref(0);
+let amount1 = ref(0);
 
-    const closeFromModal = () => {
-      showFromModal.value = false;
-    };
-    const closeToModal = () => {
-      showToModal.value = false;
-    };
+let tokenInfos = ref([]);
+let fromTokenInfo = ref({});
+let toTokenInfo = ref({});
 
-    const clickFromModal = () => {
-      showFromModal.value = true;
-    };
-    const clickToModal = () => {
-      showToModal.value = true;
-    };
-
-    const updateFromToken = (tokenInfo) => {
-      if (toTokenInfo.value.address == tokenInfo.address) {
-        toTokenInfo.value = fromTokenInfo.value;
-      }
-      fromTokenInfo.value = tokenInfo;
-
-      showFromModal.value = false;
-    };
-    const updateToToken = (tokenInfo) => {
-      if (fromTokenInfo.value.address == tokenInfo.address) {
-        fromTokenInfo.value = toTokenInfo.value;
-      }
-      toTokenInfo.value = tokenInfo;
-      showToModal.value = false;
-    };
-
-    onMounted(() => {
-      tokenInfos.value = getTokens();
-      fromTokenInfo.value = tokenInfos.value[1];
-      toTokenInfo.value = tokenInfos.value[0];
-    });
-
-    return {
-      tokenInfos,
-      fromTokenInfo,
-      toTokenInfo,
-      amount0: 0,
-      amount1: 0,
-      showFromModal,
-      showToModal,
-      closeFromModal,
-      closeToModal,
-      clickFromModal,
-      clickToModal,
-      updateFromToken,
-      updateToToken,
-    };
-  },
+const closeFromModal = () => {
+  showFromModal.value = false;
 };
+const closeToModal = () => {
+  showToModal.value = false;
+};
+
+const clickFromModal = () => {
+  showFromModal.value = true;
+};
+const clickToModal = () => {
+  showToModal.value = true;
+};
+
+const updateFromToken = (tokenInfo) => {
+  if (toTokenInfo.value.address == tokenInfo.address) {
+    toTokenInfo.value = fromTokenInfo.value;
+  }
+  fromTokenInfo.value = tokenInfo;
+
+  showFromModal.value = false;
+};
+const updateToToken = (tokenInfo) => {
+  if (fromTokenInfo.value.address == tokenInfo.address) {
+    fromTokenInfo.value = toTokenInfo.value;
+  }
+  toTokenInfo.value = tokenInfo;
+  showToModal.value = false;
+};
+
+onMounted(() => {
+  tokenInfos.value = getTokens();
+  fromTokenInfo.value = tokenInfos.value[1];
+  toTokenInfo.value = tokenInfos.value[0];
+});
 </script>
 
 <style>
