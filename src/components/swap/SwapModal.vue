@@ -2,11 +2,19 @@
   <div class="swap-modal-container">
     <div class="swap-modal-top-wrapper">
       <div class="swap-modal-text">Select a token</div>
-      <img src="@/assets/confirm/close-btn.svg" alt="close-btn" @click="closeModal" />
+      <img
+        src="@/assets/confirm/close-btn.svg"
+        alt="close-btn"
+        @click="closeModal"
+      />
     </div>
 
     <div class="swap-modal-list-container">
-      <div v-for="(item, index) in tokenInfo" class="swap-modal-list-wrapper">
+      <div
+        v-for="(item, index) in tokenInfo"
+        class="swap-modal-list-wrapper"
+        @click="clickToken(item)"
+      >
         <div class="swap-modal-token-wrapper">
           <img :src="item.img" alt="token" />
           <div class="swap-modal-token-text-wrapper">
@@ -20,17 +28,18 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    tokenInfo: {
-      type: Array,
-    },
-    closeModal: {
-      type: Function,
-      required: true
-    }
-  },
+<script setup>
+// import { onMounted, ref } from "vue";
+
+const props = defineProps({ tokenInfo: Object });
+const emits = defineEmits(["closeModal", "tokenClicked"]);
+
+const closeModal = () => {
+  emits("closeModal");
+};
+
+const clickToken = (token) => {
+  emits("tokenClicked", token);
 };
 </script>
 

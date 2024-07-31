@@ -127,12 +127,14 @@
   <SwapModal
     v-if="showFromModal"
     :tokenInfo="tokenInfos"
-    :closeModal="closeFromModal"
+    @closeModal="closeFromModal"
+    @tokenClicked="updateFromToken"
   />
   <SwapModal
     v-if="showToModal"
     :tokenInfo="tokenInfos"
-    :closeModal="closeToModal"
+    @closeModal="closeToModal"
+    @tokenClicked="updateToToken"
   />
 </template>
 
@@ -167,6 +169,22 @@ export default {
       showToModal.value = true;
     };
 
+    const updateFromToken = (tokenInfo) => {
+      if (toTokenInfo.value.address == tokenInfo.address) {
+        toTokenInfo.value = fromTokenInfo.value;
+      }
+      fromTokenInfo.value = tokenInfo;
+
+      showFromModal.value = false;
+    };
+    const updateToToken = (tokenInfo) => {
+      if (fromTokenInfo.value.address == tokenInfo.address) {
+        fromTokenInfo.value = toTokenInfo.value;
+      }
+      toTokenInfo.value = tokenInfo;
+      showToModal.value = false;
+    };
+
     onMounted(() => {
       tokenInfos.value = getTokens();
       fromTokenInfo.value = tokenInfos.value[1];
@@ -182,9 +200,11 @@ export default {
       showFromModal,
       showToModal,
       closeFromModal,
-      clickFromModal,
       closeToModal,
+      clickFromModal,
       clickToModal,
+      updateFromToken,
+      updateToToken,
     };
   },
 };
