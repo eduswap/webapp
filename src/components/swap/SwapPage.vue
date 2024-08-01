@@ -9,10 +9,14 @@
           <div class="swap-input-text">You pay</div>
           <div class="swap-input-select-container">
             <div class="swap-input-select-wrapper">
-              <div class="swap-input-select-text">half</div>
+              <div class="swap-input-select-text" @click="updateAmount0(50)">
+                half
+              </div>
             </div>
             <div class="swap-input-select-wrapper">
-              <div class="swap-input-select-text">max</div>
+              <div class="swap-input-select-text" @click="updateAmount0(100)">
+                max
+              </div>
             </div>
           </div>
         </div>
@@ -152,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import {
   attach,
   getAccount,
@@ -242,6 +246,40 @@ const reverseTokenInfo = () => {
   amount1.value = 0;
 };
 
+const updateSwapOut = async () => {
+  const { amountOut, spotPrice, path } = await getAmountsInfo(
+    amount0.value,
+    fromTokenInfo.value.address,
+    toTokenInfo.value.address
+  );
+
+  if (amountOut != null) {
+    amount1.value = amountOut;
+
+    exchangeRate.value = (amount1.value / amount0.value).toFixed(4);
+    priceImpact.value = (
+      ((spotPrice - exchangeRate.value) / spotPrice) *
+      100
+    ).toFixed(2);
+
+    minimumAmount.value = (amount1.value * 0.995).toFixed(6);
+    feeAmount.value = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
+
+    routeInfo.value = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
+  }
+};
+
+const updateAmount0 = async (percentage) => {
+  amount0.value = fromTokenInfo.value.balance / (100 / percentage);
+
+  if (percentage == 100 && fromTokenInfo.value.symbol == "WEDU") {
+    amount0.value = fromTokenInfo.value.balance - 0.0002;
+    if (amount0.value < 0) amount0.value = 0;
+  }
+
+  await updateSwapOut();
+};
+
 onMounted(async () => {
   tokenInfos.value = getTokens();
 
@@ -259,26 +297,6 @@ onMounted(async () => {
   fromTokenInfo.value = tokenInfos.value[1];
   toTokenInfo.value = tokenInfos.value[0];
 });
-
-const updateSwapOut = async () => {
-  const { amountOut, spotPrice, path } = await getAmountsInfo(
-    amount0.value,
-    fromTokenInfo.value.address,
-    toTokenInfo.value.address
-  );
-
-  if (amountOut != null) {
-    amount1.value = amountOut;
-
-    exchangeRate.value = (amount1.value / amount0.value).toFixed(4);
-    priceImpact.value = (((spotPrice - exchangeRate.value) / spotPrice) * 100).toFixed(2);
-
-    minimumAmount.value = (amount1.value * 0.995).toFixed(6);
-    feeAmount.value = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
-
-    routeInfo.value = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
-  }
-};
 </script>
 
 <style>
