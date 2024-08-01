@@ -7,6 +7,7 @@ import arbImg from "@/assets/token/arb.png";
 import eduswapImg from "@/assets/token/eduswap.png";
 
 import viewArtifacts from "@/abis/EduswapV2View.json"
+import paths from "@/constants/paths.json"
 
 let tokens = [
     {
@@ -36,7 +37,7 @@ let tokens = [
     {
         "symbol": "ARB",
         "name": "eduswap test ARB",
-        "address": "0x90f2F4E97Eb6B62D9049D07C6f6877FD171a9a0F",
+        "address": "0x3FBA3ef10e452D1e8Cc6C0cf552A8A25b572Ec41",
         "img": arbImg,
         "decimals": 18,
         "balance": 0,
@@ -44,7 +45,7 @@ let tokens = [
     {
         "symbol": "EDUSWAP",
         "name": "eduswap token",
-        "address": "0x90f2F4E97Eb6B62D9049D07C6f6877FD171a9a0F",
+        "address": "0x104A0F99728D5a79dbEbB4a0a58eCcb456e82411",
         "img": eduswapImg,
         "decimals": 18,
         "balance": 0,
@@ -56,7 +57,7 @@ let account = null;
 
 let viewContract = null;
 
-const viewContractAddress = "0xaA4263660F1c4A6F84b242c77F3a250824a0F935";
+const viewContractAddress = "0x128bdb0B45EB4Ea5F2bcD740f39C08E6368Cd4fe";
 
 function attach() {
     if (provider == null) {
@@ -72,8 +73,16 @@ function getTokens() {
     return tokens;
 }
 
+function getPaths() {
+    return paths;
+}
+
 function getAccount() {
     return account;
+}
+
+function getImageSource(tokenAddress) {
+    return tokens.filter((token) => token.address == tokenAddress)[0].img;
 }
 
 async function updateTokenBalance(userAddress) {
@@ -81,7 +90,7 @@ async function updateTokenBalance(userAddress) {
 
     const balances = await viewContract.getTokenBalances(tokenAddrs, userAddress);
     for (let i = 0; i < tokens.length; i++) {
-        tokens[i].balance = formatNumber(balances[i], tokens[i].decimals);
+        tokens[i].balance = ethers.formatUnits(balances[i], tokens[i].decimals);
     }
 }
 
@@ -90,21 +99,35 @@ async function updateAccount() {
     account = await signer.getAddress();
 }
 
-function formatNumber(num, decimalPlaces) {
-    let numStr = num.toString();
+async function getAmountsInfo(amountIn, tokenIn, tokenOut) {
+    if (amountIn == 0) return { amountOut: null, spotPrice: null }
+    const fromDecimals = tokens.filter((token) => token.address == tokenIn)[0].decimals;
+    const toDecimals = tokens.filter((token) => token.address == tokenOut)[0].decimals;
 
-    if (numStr.length <= decimalPlaces) {
-        const zerosToAdd = decimalPlaces - numStr.length + 1;
-        numStr = '0'.repeat(zerosToAdd) + numStr;
-    }
+    amountIn = ethers.parseUnits(amountIn.toString(), fromDecimals);
 
-    return numStr.slice(0, -decimalPlaces) + '.' + numStr.slice(-decimalPlaces);
+    const [amountsOut, spotPrices] = await viewContract.getAmountsOutInfo(amountIn, paths[tokenIn][tokenOut]);
+
+    const maxIndex = amountsOut.reduce(
+        (maxIdx, currentValue, currentIndex, array) => {
+            return currentValue > array[maxIdx] ? currentIndex : maxIdx;
+        },
+        0
+    );
+
+    const amountOut = ethers.formatUnits(amountsOut[maxIndex], toDecimals);
+    const spotPrice = ethers.formatUnits(spotPrices[maxIndex], 18);
+    const path = paths[tokenIn][tokenOut][maxIndex];
+
+    return { amountOut, spotPrice, path }
 }
 
 export {
     getTokens,
     attach,
     getAccount,
+    getImageSource,
     updateTokenBalance,
     updateAccount,
+    getAmountsInfo,
 }
