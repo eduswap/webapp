@@ -7,6 +7,8 @@ import arbImg from "@/assets/token/arb.png";
 import eduswapImg from "@/assets/token/eduswap.png";
 
 import viewArtifacts from "@/abis/EduswapV2View.json"
+import routerArtifacts from "@/abis/EduswapV2Router.json"
+import tokenArtifacts from "@/abis/ERC20.json"
 import paths from "@/constants/paths.json"
 
 let tokens = [
@@ -53,11 +55,15 @@ let tokens = [
 ]
 
 let provider = null;
+let signer = null;
 let account = null;
 
 let viewContract = null;
+let routerContract = null;
+let tokenContract = {};
 
 const viewContractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
+const routerContractAddress = "0xe745f43775B760958cd34ee83B3ab0c088F74630";
 
 function attach() {
     if (provider == null) {
@@ -66,6 +72,16 @@ function attach() {
 
     if (viewContract == null) {
         viewContract = new ethers.Contract(viewContractAddress, viewArtifacts.abi, provider);
+    }
+
+    if (routerContract == null) {
+        routerContract = new ethers.Contract(routerContractAddress, routerArtifacts.abi, provider);
+    }
+
+    if (Object.keys(tokenContract).length == 0) {
+        for (let i = 0; i < tokens.length; i++) {
+            tokenContract[tokens[i].address] = new ethers.Contract(tokens[i].address, tokenArtifacts.abi, provider);
+        }
     }
 }
 
@@ -95,7 +111,7 @@ async function updateTokenBalance(userAddress) {
 }
 
 async function updateAccount() {
-    const signer = await provider.getSigner();
+    signer = await provider.getSigner();
     account = await signer.getAddress();
 }
 
@@ -145,6 +161,83 @@ async function getAmountsInInfo(amountOut, tokenIn, tokenOut) {
     return { amountIn, spotPrice, path }
 }
 
+async function checkAllowance(tokenAddress) {
+    if (account == null) {
+        return true
+    }
+
+    if (tokenAddress == "0xbd51800607E7C743a0e9b0D89D837058F4f42756") {
+        return true
+    } else {
+        const allowance = await tokenContract[tokenAddress].allowance(account, routerContractAddress);
+        return allowance == ethers.MaxUint256
+    }
+}
+
+async function approveToken(tokenAddress) {
+    const tx = await tokenContract[tokenAddress]
+        .connect(signer)
+        .approve(
+            routerContractAddress,
+            ethers.MaxUint256
+        );
+    await tx.wait();
+    console.log("approveToken:", tx.hash);
+}
+
+async function swapExactTokensForTokens(amountIn, amountOutMin, path) {
+    const fromDecimals = tokens.filter((token) => token.address == path[0])[0].decimals;
+    const toDecimals = tokens.filter((token) => token.address == path[path.length - 1])[0].decimals;
+
+    amountIn = ethers.parseUnits(amountIn.toString(), fromDecimals);
+    amountOutMin = ethers.parseUnits(amountOutMin.toString(), toDecimals);
+
+    // 1 ftoken: eth
+    if (path[0] == "0xbd51800607E7C743a0e9b0D89D837058F4f42756") {
+        const tx = await routerContract
+            .connect(signer)
+            .swapExactETHForTokens(
+                amountOutMin,
+                path,
+                account,
+                ethers.MaxUint256
+                , { value: amountIn }
+            );
+        await tx.wait();
+        console.log("swapExactETHForTokens:", tx.hash);
+    }
+
+    // 2 ttoken: eth
+    else if (path[1] == "0xbd51800607E7C743a0e9b0D89D837058F4f42756") {
+        const tx = await routerContract
+            .connect(signer)
+            .swapExactTokensForETH(
+                amountIn,
+                amountOutMin,
+                path,
+                account,
+                ethers.MaxUint256
+            );
+        await tx.wait();
+        console.log("swapExactTokensForETH:", tx.hash);
+    }
+
+    // 3 ftoken & ttoken: x eth
+    else {
+        const tx = await routerContract
+            .connect(signer)
+            .swapExactTokensForTokens(
+                amountIn,
+                amountOutMin,
+                path,
+                account,
+                ethers.MaxUint256
+            );
+        await tx.wait();
+        console.log("swapExactTokensForTokens:", tx.hash);
+    }
+}
+
 export {
     getTokens,
     attach,
@@ -153,5 +246,8 @@ export {
     updateTokenBalance,
     updateAccount,
     getAmountsOutInfo,
-    getAmountsInInfo
+    getAmountsInInfo,
+    checkAllowance,
+    approveToken,
+    swapExactTokensForTokens,
 }

@@ -141,8 +141,8 @@
       </div>
     </div>
 
-    <div class="swap-tx-btn-wrapper">
-      <div class="swap-tx-btn-text">Swap</div>
+    <div class="swap-tx-btn-wrapper" @click="swap">
+      <div class="swap-tx-btn-text">{{ btnName }}</div>
     </div>
   </div>
 
@@ -161,7 +161,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import {
   attach,
   getAccount,
@@ -171,6 +171,9 @@ import {
   updateAccount,
   getAmountsOutInfo,
   getAmountsInInfo,
+  checkAllowance,
+  approveToken,
+  swapExactTokensForTokens,
 } from "@/js/contract_interacter.js";
 import SwapModal from "@/components/swap/SwapModal.vue";
 
@@ -185,10 +188,12 @@ let priceImpact = ref("?");
 let minimumAmount = ref("?");
 let feeAmount = ref("?");
 let routeInfo = ref([]);
+let swappath = ref([]);
 
 let tokenInfos = ref([]);
 let fromTokenInfo = ref({});
 let toTokenInfo = ref({});
+let fromTokenAllowance = ref(true);
 
 const closeFromModal = () => {
   showFromModal.value = false;
@@ -204,7 +209,7 @@ const clickToModal = () => {
   showToModal.value = true;
 };
 
-const updateFromToken = (tokenInfo) => {
+const updateFromToken = async (tokenInfo) => {
   if (toTokenInfo.value.address == tokenInfo.address) {
     toTokenInfo.value = fromTokenInfo.value;
   }
@@ -219,8 +224,10 @@ const updateFromToken = (tokenInfo) => {
   routeInfo.value = [];
   amount0.value = 0;
   amount1.value = 0;
+
+  fromTokenAllowance.value = await checkAllowance(fromTokenInfo.value.address);
 };
-const updateToToken = (tokenInfo) => {
+const updateToToken = async (tokenInfo) => {
   if (fromTokenInfo.value.address == tokenInfo.address) {
     fromTokenInfo.value = toTokenInfo.value;
   }
@@ -236,7 +243,7 @@ const updateToToken = (tokenInfo) => {
   amount1.value = 0;
 };
 
-const reverseTokenInfo = () => {
+const reverseTokenInfo = async () => {
   const tempFromTokenInfo = fromTokenInfo.value;
   const tempToTokenInfo = toTokenInfo.value;
 
@@ -250,6 +257,8 @@ const reverseTokenInfo = () => {
   routeInfo.value = [];
   amount0.value = 0;
   amount1.value = 0;
+
+  fromTokenAllowance.value = await checkAllowance(fromTokenInfo.value.address);
 };
 
 const updateSwapOut = async () => {
@@ -271,6 +280,7 @@ const updateSwapOut = async () => {
     minimumAmount.value = (amount1.value * 0.995).toFixed(6);
     feeAmount.value = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
 
+    swappath.value = path;
     routeInfo.value = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
   }
 };
@@ -294,6 +304,7 @@ const updateSwapIn = async () => {
     minimumAmount.value = (amount1.value * 0.995).toFixed(6);
     feeAmount.value = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
 
+    swappath.value = path;
     routeInfo.value = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
   }
 };
@@ -308,6 +319,22 @@ const updateAmount0 = async (percentage) => {
 
   await updateSwapOut();
 };
+
+const swap = async () => {
+  if (!fromTokenAllowance.value) {
+    await approveToken(tokenAddress);
+  }
+
+  await swapExactTokensForTokens(amount0.value, minimumAmount.value, swappath.value);
+};
+
+const btnName = computed(() => {
+  if (fromTokenAllowance.value) {
+    return "Swap";
+  } else {
+    return "Approve";
+  }
+});
 
 onMounted(async () => {
   tokenInfos.value = getTokens();
