@@ -127,7 +127,7 @@
   </div>
   <Ing v-if="loading" />
 
-  <PoolModal v-if="showModal" @closeModal="closeModal" :pooldata = "modalData" />
+  <PoolModal v-if="showModal" @closeModal="closeModal" :pooldata="modalData" />
 </template>
 
 <script>
@@ -166,7 +166,7 @@ export default {
   },
   setup() {
     const time = 60;
-    const poolIds = [0, 1, 2, 3, 4];
+    const poolIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
     let pools = ref([]);
     let mypools = ref([]);
     let loading = ref(false);
@@ -195,7 +195,7 @@ export default {
       const chainId = (await provider.getNetwork()).chainId;
 
       if (chainId == 656476n) {
-        const contractAddress = "0x1a15e70a5a9319cc0508F84aCaD09976d9938e29";
+        const contractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
         const contractABI = [
           {
             inputs: [
@@ -574,7 +574,9 @@ export default {
       this.showModal = false;
     },
     clickModal(pairAddress) {
-      this.modalData = this.mypools.filter((item) => item.pair === pairAddress)[0];
+      this.modalData = this.mypools.filter(
+        (item) => item.pair === pairAddress
+      )[0];
 
       this.showModal = true;
     },
