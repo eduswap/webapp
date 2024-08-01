@@ -1,5 +1,5 @@
 <template>
-  <div class="swap-container" v-if="!showFromModal && !showToModal">
+    <div class="swap-container" v-if="!showFromModal && !showToModal && !showConfirmModal ">
     <div class="swap-top-wrapper">
       <div class="swap-top-text">Swap</div>
     </div>
@@ -158,6 +158,12 @@
     @closeModal="closeToModal"
     @tokenClicked="updateToToken"
   />
+
+  <ConfirmTransaction
+    v-if="showConfirmModal"
+    :txStatus="txStatus"
+    @closeModal="closeConfirmModal"
+  />
 </template>
 
 <script setup>
@@ -176,6 +182,7 @@ import {
   swapExactTokensForTokens,
 } from "@/js/contract_interacter.js";
 import SwapModal from "@/components/swap/SwapModal.vue";
+import ConfirmTransaction from "@/components/common/ConfirmTransaction.vue";
 
 let showFromModal = ref(false);
 let showToModal = ref(false);
@@ -194,6 +201,15 @@ let tokenInfos = ref([]);
 let fromTokenInfo = ref({});
 let toTokenInfo = ref({});
 let fromTokenAllowance = ref(true);
+
+let showConfirmModal = ref(false);
+let txStatus = ref("ing");
+
+const closeConfirmModal = () => {
+  showConfirmModal.value = false;
+
+  txStatus.value = "ing";
+};
 
 const closeFromModal = () => {
   showFromModal.value = false;
@@ -325,7 +341,27 @@ const swap = async () => {
     await approveToken(tokenAddress);
   }
 
-  await swapExactTokensForTokens(amount0.value, minimumAmount.value, swappath.value);
+  showConfirmModal.value = true;
+  try {
+    await swapExactTokensForTokens(
+      amount0.value,
+      minimumAmount.value,
+      swappath.value
+    );
+    txStatus.value = "success";
+  } catch (error) {
+    txStatus.value = "fail";
+  }
+
+  exchangeRate.value = "?";
+  priceImpact.value = "?";
+  minimumAmount.value = "?";
+  feeAmount.value = "?";
+  routeInfo.value = [];
+  amount0.value = 0;
+  amount1.value = 0;
+
+  fromTokenAllowance.value = await checkAllowance(fromTokenInfo.value.address);
 };
 
 const btnName = computed(() => {
