@@ -362,6 +362,8 @@ const swap = async () => {
   amount1.value = 0;
 
   fromTokenAllowance.value = await checkAllowance(fromTokenInfo.value.address);
+  const account = getAccount();
+  await updateTokenBalance(account);
 };
 
 const btnName = computed(() => {
