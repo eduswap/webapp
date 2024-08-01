@@ -32,7 +32,12 @@
             </div>
           </div>
           <div class="swap-input-right-wrapper">
-            <input class="swap-value" type="number" v-model="amount0" />
+            <input
+              class="swap-value"
+              type="number"
+              v-model="amount0"
+              @input="updateSwapOut"
+            />
             <div class="swap-input-balance-text">
               Balance: {{ fromTokenInfo.balance }}
             </div>
@@ -81,15 +86,18 @@
     <div class="swap-detials-wrapper">
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Exchange Rate</div>
-        <div class="swap-detials-list-text2">1 WEMIX = 1.1212 WEMIX</div>
+        <div class="swap-detials-list-text2">
+          1 {{ fromTokenInfo.symbol }} = {{ exchangeRate }}
+          {{ toTokenInfo.symbol }}
+        </div>
       </div>
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Price Impact</div>
-        <div class="swap-detials-list-text3">0.12%</div>
+        <div class="swap-detials-list-text3">{{ priceImpact }}%</div>
       </div>
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Minimum Received</div>
-        <div class="swap-detials-list-text2">1.1212 WEMIX</div>
+        <div class="swap-detials-list-text2">{{ minimumAmount }} WEMIX</div>
       </div>
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Slipage</div>
@@ -97,28 +105,29 @@
       </div>
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Fee</div>
-        <div class="swap-detials-list-text2">0.0002 WEMIX</div>
+        <div class="swap-detials-list-text2">
+          {{ feeAmount }} {{ fromTokenInfo.symbol }}
+        </div>
       </div>
-      <div class="swap-detials-list-wrapper">
+      <div class="swap-detials-list-wrapper" v-if="routeInfo.length != 0">
         <div class="swap-detials-list-text">Route</div>
-        <div class="swap-detials-route-wrapper">
+        <div
+          v-for="(item, index) in routeInfo"
+          class="swap-detials-route-wrapper"
+        >
           <div class="swap-token-route-wrapper">
             <div class="swap-token-route-img-wrapper">
-              <img src="../../assets/token/usdc.png" alt="token" />
-              <img src="../../assets/token/usdc.png" alt="token" />
+              <img :src="getImageSource(item[0])" alt="token" />
+              <img :src="getImageSource(item[1])" alt="token" />
             </div>
             <div class="swap-token-route-fee-text">0.25%</div>
           </div>
 
-          <img src="../../assets/arrow-route.svg" alt="arrow-route" />
-
-          <div class="swap-token-route-wrapper">
-            <div class="swap-token-route-img-wrapper">
-              <img src="../../assets/token/usdc.png" alt="token" />
-              <img src="../../assets/token/usdc.png" alt="token" />
-            </div>
-            <div class="swap-token-route-fee-text">0.25%</div>
-          </div>
+          <img
+            src="../../assets/arrow-route.svg"
+            alt="arrow-route"
+            v-if="routeInfo.length - 1 != index"
+          />
         </div>
       </div>
     </div>
@@ -143,13 +152,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import {
   attach,
   getAccount,
   getTokens,
+  getImageSource,
   updateTokenBalance,
   updateAccount,
+  getAmountsInfo,
 } from "@/js/contract_interacter.js";
 import SwapModal from "@/components/swap/SwapModal.vue";
 
@@ -158,6 +169,12 @@ let showToModal = ref(false);
 
 let amount0 = ref(0);
 let amount1 = ref(0);
+
+let exchangeRate = ref("?");
+let priceImpact = ref("?");
+let minimumAmount = ref("?");
+let feeAmount = ref("?");
+let routeInfo = ref([]);
 
 let tokenInfos = ref([]);
 let fromTokenInfo = ref({});
@@ -202,6 +219,8 @@ const reverseTokenInfo = () => {
 };
 
 onMounted(async () => {
+  tokenInfos.value = getTokens();
+
   attach();
 
   await updateAccount();
@@ -216,6 +235,26 @@ onMounted(async () => {
   fromTokenInfo.value = tokenInfos.value[1];
   toTokenInfo.value = tokenInfos.value[0];
 });
+
+const updateSwapOut = async () => {
+  const { amountOut, spotPrice, path } = await getAmountsInfo(
+    amount0.value,
+    fromTokenInfo.value.address,
+    toTokenInfo.value.address
+  );
+
+  if (amountOut != null) {
+    amount1.value = amountOut;
+
+    exchangeRate = (amount1.value / amount0.value).toFixed(4);
+    priceImpact = (((spotPrice - exchangeRate) / spotPrice) * 100).toFixed(2);
+
+    minimumAmount = (amount1.value * 0.995).toFixed(6);
+    feeAmount = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
+
+    routeInfo = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
+  }
+};
 </script>
 
 <style>

@@ -22,7 +22,9 @@
             <div class="swap-modal-token-name-text">{{ item.name }}</div>
           </div>
         </div>
-        <div class="swap-modal-list-balance-text">0.1212</div>
+        <div class="swap-modal-list-balance-text">
+          {{ Number(item.balance).toFixed(4) }}
+        </div>
       </div>
     </div>
   </div>
