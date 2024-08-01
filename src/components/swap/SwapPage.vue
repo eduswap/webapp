@@ -201,6 +201,14 @@ const updateFromToken = (tokenInfo) => {
   fromTokenInfo.value = tokenInfo;
 
   showFromModal.value = false;
+
+  exchangeRate.value = "?";
+  priceImpact.value = "?";
+  minimumAmount.value = "?";
+  feeAmount.value = "?";
+  routeInfo.value = [];
+  amount0.value = 0;
+  amount1.value = 0;
 };
 const updateToToken = (tokenInfo) => {
   if (fromTokenInfo.value.address == tokenInfo.address) {
@@ -208,6 +216,14 @@ const updateToToken = (tokenInfo) => {
   }
   toTokenInfo.value = tokenInfo;
   showToModal.value = false;
+
+  exchangeRate.value = "?";
+  priceImpact.value = "?";
+  minimumAmount.value = "?";
+  feeAmount.value = "?";
+  routeInfo.value = [];
+  amount0.value = 0;
+  amount1.value = 0;
 };
 
 const reverseTokenInfo = () => {
@@ -216,6 +232,14 @@ const reverseTokenInfo = () => {
 
   fromTokenInfo.value = tempToTokenInfo;
   toTokenInfo.value = tempFromTokenInfo;
+
+  exchangeRate.value = "?";
+  priceImpact.value = "?";
+  minimumAmount.value = "?";
+  feeAmount.value = "?";
+  routeInfo.value = [];
+  amount0.value = 0;
+  amount1.value = 0;
 };
 
 onMounted(async () => {
@@ -246,13 +270,13 @@ const updateSwapOut = async () => {
   if (amountOut != null) {
     amount1.value = amountOut;
 
-    exchangeRate = (amount1.value / amount0.value).toFixed(4);
-    priceImpact = (((spotPrice - exchangeRate) / spotPrice) * 100).toFixed(2);
+    exchangeRate.value = (amount1.value / amount0.value).toFixed(4);
+    priceImpact.value = (((spotPrice - exchangeRate.value) / spotPrice) * 100).toFixed(2);
 
-    minimumAmount = (amount1.value * 0.995).toFixed(6);
-    feeAmount = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
+    minimumAmount.value = (amount1.value * 0.995).toFixed(6);
+    feeAmount.value = (amount1.value * 0.0025 * (path.length - 1)).toFixed(6);
 
-    routeInfo = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
+    routeInfo.value = path.slice(0, -1).map((_, i) => [path[i], path[i + 1]]);
   }
 };
 </script>
