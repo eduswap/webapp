@@ -57,7 +57,7 @@ let account = null;
 
 let viewContract = null;
 
-const viewContractAddress = "0x128bdb0B45EB4Ea5F2bcD740f39C08E6368Cd4fe";
+const viewContractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
 
 function attach() {
     if (provider == null) {
@@ -99,7 +99,7 @@ async function updateAccount() {
     account = await signer.getAddress();
 }
 
-async function getAmountsInfo(amountIn, tokenIn, tokenOut) {
+async function getAmountsOutInfo(amountIn, tokenIn, tokenOut) {
     if (amountIn == 0) return { amountOut: null, spotPrice: null }
     const fromDecimals = tokens.filter((token) => token.address == tokenIn)[0].decimals;
     const toDecimals = tokens.filter((token) => token.address == tokenOut)[0].decimals;
@@ -122,6 +122,29 @@ async function getAmountsInfo(amountIn, tokenIn, tokenOut) {
     return { amountOut, spotPrice, path }
 }
 
+async function getAmountsInInfo(amountOut, tokenIn, tokenOut) {
+    if (amountOut == 0) return { amountIn: null, spotPrice: null }
+    const fromDecimals = tokens.filter((token) => token.address == tokenIn)[0].decimals;
+    const toDecimals = tokens.filter((token) => token.address == tokenOut)[0].decimals;
+
+    amountOut = ethers.parseUnits(amountOut.toString(), toDecimals);
+
+    const [amountsIn, spotPrices] = await viewContract.getAmountsInInfo(amountOut, paths[tokenIn][tokenOut]);
+
+    const minIndex = amountsIn.reduce(
+        (minIdx, currentValue, currentIndex, array) => {
+            return currentValue < array[minIdx] ? currentIndex : minIdx;
+        },
+        0
+    );
+
+    const amountIn = ethers.formatUnits(amountsIn[minIndex], fromDecimals);
+    const spotPrice = ethers.formatUnits(spotPrices[minIndex], 18);
+    const path = paths[tokenIn][tokenOut][minIndex];
+
+    return { amountIn, spotPrice, path }
+}
+
 export {
     getTokens,
     attach,
@@ -129,5 +152,6 @@ export {
     getImageSource,
     updateTokenBalance,
     updateAccount,
-    getAmountsInfo,
+    getAmountsOutInfo,
+    getAmountsInInfo
 }
