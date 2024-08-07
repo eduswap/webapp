@@ -10,16 +10,20 @@
       <div class="menu-text" @click="navigateTo('/pool')">Pool</div>
     </div>
 
-    <div class="wallet-wrapper" v-if="!account" @click="connectWallet">
+    <div class="wallet-wrapper" v-if="!isConnected" @click="modal.open()">
       <div class="wallet-text">Connect Wallet</div>
     </div>
 
-    <div class="wallet-wrapper-connected" v-if="account">
-      <img src="@/assets/metamask.png" alt="metamask" />
+    <div
+      class="wallet-wrapper-connected"
+      v-if="isConnected"
+      @click="modal.open()"
+    >
+      <img :src="walletInfo.icon" alt="metamask" />
       <div class="wallet-text-connected">
         {{
-          `${account.substring(0, 6)}...${account.substring(
-            account.length - 4
+          `${address.substring(0, 6)}...${address.substring(
+            address.length - 4
           )}`
         }}
       </div>
@@ -27,72 +31,133 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { useRouter } from "vue-router";
 import { ethers } from "ethers";
+import {
+  createWeb3Modal,
+  defaultConfig,
+  useWalletInfo,
+  useWeb3ModalAccount,
+} from "@web3modal/ethers/vue";
 
-export default {
-  data() {
-    return {
-      account: null,
-    };
-  },
-  setup() {
-    const router = useRouter();
+import { ref, onMounted } from "vue";
 
-    const navigateTo = (path) => {
-      router.push(path);
-    };
+// 1. Get projectId from https://cloud.walletconnect.com
+const projectId = "ff3f8d2e88e862972b9d4c7c2b81acf0";
 
-    return { navigateTo };
-  },
-  methods: {
-    isActiveRoute(routes) {
-      return routes.includes(this.$route.path);
-    },
-    async connectWallet() {
-      if (window.ethereum) {
-        try {
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signer = await provider.getSigner();
-
-          this.account = await signer.getAddress();
-
-          const network = await provider.getNetwork();
-
-          if (network.chainId !== 656476n) {
-            try {
-              await window.ethereum.request({
-                method: "wallet_addEthereumChain",
-                params: [
-                  {
-                    chainId: "0xa045c",
-                    chainName: "EDU testnet",
-                    rpcUrls: ["https://rpc.open-campus-codex.gelato.digital"],
-                    nativeCurrency: {
-                      name: "EDU",
-                      symbol: "EDU",
-                      decimals: 18,
-                    },
-                    blockExplorerUrls: [
-                      "https://opencampus-codex.blockscout.com",
-                    ],
-                  },
-                ],
-              });
-            } catch (error) {
-              console.error("Failed to switch network:", error);
-            }
-          }
-        } catch (error) {
-          console.error("Error connecting to Metamask:", error);
-        }
-      } else {
-        console.error("Metamask not detected. Please install Metamask.");
-      }
-    },
-  },
+// 2. Set chains
+const mainnet = {
+  chainId: 656476,
+  name: "Open Campus Codex Sepolia",
+  currency: "ETH",
+  explorerUrl: "https://opencampus-codex.blockscout.com",
+  rpcUrl: "https://rpc.open-campus-codex.gelato.digital",
 };
+
+// 3. Create your application's metadata object
+const metadata = {
+  name: "My Website",
+  description: "My Website description",
+  url: "https://mywebsite.com", // url must match your domain & subdomain
+  icons: ["https://avatars.mywebsite.com/"],
+};
+
+// 4. Create Ethers config
+const ethersConfig = defaultConfig({
+  /*Required*/
+  metadata,
+
+  /*Optional*/
+  enableEIP6963: true, // true by default
+  enableInjected: true, // true by default
+  enableCoinbase: true, // true by default
+  rpcUrl: "https://rpc.open-campus-codex.gelato.digital", // used for the Coinbase SDK
+  defaultChainId: 656476, // used for the Coinbase SDK
+});
+
+// 5. Create a AppKit instance
+const modal = createWeb3Modal({
+  ethersConfig,
+  chains: [mainnet],
+  projectId,
+  enableAnalytics: true, // Optional - defaults to your Cloud configuration
+});
+
+const { walletInfo } = useWalletInfo();
+const { address, chainId, isConnected } = useWeb3ModalAccount();
+
+// router function
+const router = useRouter();
+
+const navigateTo = (path) => {
+  router.push(path);
+};
+
+// onMounted(async () => {});
+
+// export default {
+//   data() {
+//     return {
+//       account: null,
+//     };
+//   },
+//   setup() {
+//     const router = useRouter();
+
+//     const navigateTo = (path) => {
+//       router.push(path);
+//     };
+
+//     return { navigateTo };
+//   },
+//   methods: {
+//     isActiveRoute(routes) {
+//       return routes.includes(this.$route.path);
+//     },
+//     async connectWallet() {
+//       if (window.ethereum) {
+//         try {
+//           const provider = new ethers.BrowserProvider(window.ethereum);
+//           const signer = await provider.getSigner();
+
+//           this.account = await signer.getAddress();
+
+//           const network = await provider.getNetwork();
+
+//           if (network.chainId !== 656476n) {
+//             try {
+//               await window.ethereum.request({
+//                 method: "wallet_addEthereumChain",
+//                 params: [
+//                   {
+//                     chainId: "0xa045c",
+//                     chainName: "EDU testnet",
+//                     rpcUrls: ["https://rpc.open-campus-codex.gelato.digital"],
+//                     nativeCurrency: {
+//                       name: "EDU",
+//                       symbol: "EDU",
+//                       decimals: 18,
+//                     },
+//                     blockExplorerUrls: [
+//                       "https://opencampus-codex.blockscout.com",
+//                     ],
+//                   },
+//                 ],
+//               });
+//             } catch (error) {
+//               console.error("Failed to switch network:", error);
+//             }
+//           }
+//         } catch (error) {
+//           console.error("Error connecting to Metamask:", error);
+//         }
+//       } else {
+//         console.error("Metamask not detected. Please install Metamask.");
+//       }
+//     },
+//   },
+// };
 </script>
 
 <style scoped>
@@ -184,6 +249,11 @@ export default {
   background: #356f6a;
 
   cursor: pointer;
+}
+
+.wallet-wrapper-connected img {
+  width: 22px;
+  height: 22px;
 }
 
 .wallet-text-connected {
