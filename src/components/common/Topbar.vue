@@ -44,7 +44,7 @@ import {
 import { ref, onMounted } from "vue";
 
 // 1. Get projectId from https://cloud.walletconnect.com
-const projectId = "ff3f8d2e88e862972b9d4c7c2b81acf0";
+const projectId = "ff3f8d2e88e862972b9d4c7c2b81acf0"; //TODO env
 
 // 2. Set chains
 const mainnet = {
@@ -57,10 +57,10 @@ const mainnet = {
 
 // 3. Create your application's metadata object
 const metadata = {
-  name: "My Website",
-  description: "My Website description",
-  url: "https://mywebsite.com", // url must match your domain & subdomain
-  icons: ["https://avatars.mywebsite.com/"],
+  name: "EDUSWAP",
+  description: "Whis is eduswap website",
+  url: "", //TODO 
+  icons: [""], //TODO 
 };
 
 // 4. Create Ethers config
