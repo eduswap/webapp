@@ -35,55 +35,14 @@
 import { useRouter } from "vue-router";
 import { ethers } from "ethers";
 import {
-  createWeb3Modal,
-  defaultConfig,
+  useWeb3Modal,
   useWalletInfo,
   useWeb3ModalAccount,
-} from "@web3modal/ethers/vue";
+} from "@/js/contract_interacter";
 
 import { ref, onMounted } from "vue";
 
-// 1. Get projectId from https://cloud.walletconnect.com
-const projectId = "ff3f8d2e88e862972b9d4c7c2b81acf0"; //TODO env
-
-// 2. Set chains
-const mainnet = {
-  chainId: 656476,
-  name: "Open Campus Codex Sepolia",
-  currency: "ETH",
-  explorerUrl: "https://opencampus-codex.blockscout.com",
-  rpcUrl: "https://rpc.open-campus-codex.gelato.digital",
-};
-
-// 3. Create your application's metadata object
-const metadata = {
-  name: "EDUSWAP",
-  description: "Whis is eduswap website",
-  url: "", //TODO 
-  icons: [""], //TODO 
-};
-
-// 4. Create Ethers config
-const ethersConfig = defaultConfig({
-  /*Required*/
-  metadata,
-
-  /*Optional*/
-  enableEIP6963: true, // true by default
-  enableInjected: true, // true by default
-  enableCoinbase: true, // true by default
-  rpcUrl: "https://rpc.open-campus-codex.gelato.digital", // used for the Coinbase SDK
-  defaultChainId: 656476, // used for the Coinbase SDK
-});
-
-// 5. Create a AppKit instance
-const modal = createWeb3Modal({
-  ethersConfig,
-  chains: [mainnet],
-  projectId,
-  enableAnalytics: true, // Optional - defaults to your Cloud configuration
-});
-
+const modal = useWeb3Modal();
 const { walletInfo } = useWalletInfo();
 const { address, chainId, isConnected } = useWeb3ModalAccount();
 
