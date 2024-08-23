@@ -1,5 +1,8 @@
 <template>
-    <div class="swap-container" v-if="!showFromModal && !showToModal && !showConfirmModal ">
+  <div
+    class="swap-container"
+    v-if="!showFromModal && !showToModal && !showConfirmModal"
+  >
     <div class="swap-top-wrapper">
       <div class="swap-top-text">Swap</div>
     </div>
@@ -43,7 +46,7 @@
               @input="updateSwapOut"
             />
             <div class="swap-input-balance-text">
-              Balance: {{ fromTokenInfo.balance }}
+              Balance: {{ (fromTokenInfo.balance * 1).toFixed(4) }}
             </div>
           </div>
         </div>
@@ -83,7 +86,7 @@
               @input="updateSwapIn"
             />
             <div class="swap-input-balance-text">
-              Balance: {{ toTokenInfo.balance }}
+              Balance: {{ (toTokenInfo.balance * 1).toFixed(4) }}
             </div>
           </div>
         </div>
@@ -167,43 +170,62 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import {
   attach,
-  getAccount,
   getTokens,
   getImageSource,
   updateTokenBalance,
-  updateAccount,
   getAmountsOutInfo,
   getAmountsInInfo,
   checkAllowance,
   approveToken,
   swapExactTokensForTokens,
+  useWeb3ModalAccount,
 } from "@/js/contract_interacter.js";
+
+import usdcImg from "@/assets/token/usdc.png";
+import eduImg from "@/assets/token/edu.png";
+
 import SwapModal from "@/components/swap/SwapModal.vue";
 import ConfirmTransaction from "@/components/common/ConfirmTransaction.vue";
 
-let showFromModal = ref(false);
-let showToModal = ref(false);
+const showFromModal = ref(false);
+const showToModal = ref(false);
 
-let amount0 = ref(0);
-let amount1 = ref(0);
+const amount0 = ref(0);
+const amount1 = ref(0);
 
-let exchangeRate = ref("?");
-let priceImpact = ref("?");
-let minimumAmount = ref("?");
-let feeAmount = ref("?");
-let routeInfo = ref([]);
-let swappath = ref([]);
+const exchangeRate = ref("?");
+const priceImpact = ref("?");
+const minimumAmount = ref("?");
+const feeAmount = ref("?");
+const routeInfo = ref([]);
+const swappath = ref([]);
 
-let tokenInfos = ref([]);
-let fromTokenInfo = ref({});
-let toTokenInfo = ref({});
-let fromTokenAllowance = ref(true);
+const tokenInfos = ref([]);
+const fromTokenInfo = ref({
+  symbol: "WEDU",
+  name: "wrapped EDU",
+  address: "0xbd51800607E7C743a0e9b0D89D837058F4f42756",
+  img: eduImg,
+  decimals: 18,
+  balance: 0,
+});
+const toTokenInfo = ref({
+  symbol: "USDC",
+  name: "test USDC",
+  address: "0x7aFB87aE9E37c365955012527f8a9039D6F2CA30",
+  img: usdcImg,
+  decimals: 6,
+  balance: 0,
+});
+const fromTokenAllowance = ref(true);
 
-let showConfirmModal = ref(false);
-let txStatus = ref("ing");
+const showConfirmModal = ref(false);
+const txStatus = ref("ing");
+
+const { address, chainId, isConnected } = useWeb3ModalAccount();
 
 const closeConfirmModal = () => {
   showConfirmModal.value = false;
@@ -346,7 +368,8 @@ const swap = async () => {
     await swapExactTokensForTokens(
       amount0.value,
       minimumAmount.value,
-      swappath.value
+      swappath.value,
+      address.value
     );
     txStatus.value = "success";
   } catch (error) {
@@ -361,9 +384,19 @@ const swap = async () => {
   amount0.value = 0;
   amount1.value = 0;
 
-  fromTokenAllowance.value = await checkAllowance(fromTokenInfo.value.address);
-  const account = getAccount();
-  await updateTokenBalance(account);
+  if (isConnected.value) {
+    fromTokenAllowance.value = await checkAllowance(
+      fromTokenInfo.value.address,
+      address.value
+    );
+
+    await updateTokenBalance(address.value);
+    tokenInfos.value = getTokens();
+    const fromBalance = tokenInfos.value[1].balance;
+    const toBalance = tokenInfos.value[0].balance;
+    fromTokenInfo.value.balance = fromBalance;
+    toTokenInfo.value.balance = toBalance;
+  }
 };
 
 const btnName = computed(() => {
@@ -375,21 +408,31 @@ const btnName = computed(() => {
 });
 
 onMounted(async () => {
-  tokenInfos.value = getTokens();
-
+  console.log("onMounted")
   attach();
 
-  await updateAccount();
-
-  const account = getAccount();
-
-  if (account != null) {
-    await updateTokenBalance(account);
+  if (isConnected.value) {
+    await updateTokenBalance(address.value);
+    tokenInfos.value = getTokens();
+    const fromBalance = tokenInfos.value[1].balance;
+    const toBalance = tokenInfos.value[0].balance;
+    fromTokenInfo.value.balance = fromBalance;
+    toTokenInfo.value.balance = toBalance;
   }
+});
 
-  tokenInfos.value = getTokens();
-  fromTokenInfo.value = tokenInfos.value[1];
-  toTokenInfo.value = tokenInfos.value[0];
+watch(isConnected, async (newVal) => {
+  console.log("watch", isConnected.value)
+  attach();
+
+  if (isConnected.value) {
+    await updateTokenBalance(address.value);
+    tokenInfos.value = getTokens();
+    const fromBalance = tokenInfos.value[1].balance;
+    const toBalance = tokenInfos.value[0].balance;
+    fromTokenInfo.value.balance = fromBalance;
+    toTokenInfo.value.balance = toBalance;
+  }
 });
 </script>
 
@@ -578,6 +621,7 @@ onMounted(async () => {
 
 .swap-input-right-wrapper {
   display: flex;
+  width: 160px;
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
