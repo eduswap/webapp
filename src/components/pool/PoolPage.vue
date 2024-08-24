@@ -130,8 +130,8 @@
   <PoolModal v-if="showModal" @closeModal="closeModal" :pooldata="modalData" />
 </template>
 
-<script>
-import { ref, onMounted, onUnmounted } from "vue";
+<script setup>
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { ethers } from "ethers";
 
 import Ing from "@/components/common/Ing.vue";
@@ -143,476 +143,462 @@ import ethImg from "@/assets/token/eth.png";
 import arbImg from "@/assets/token/arb.png";
 import eduswapImg from "@/assets/token/eduswap.png";
 
-export default {
-  components: {
-    Ing,
-    PoolModal,
-  },
-  data() {
-    return {
-      poolIndex: 0,
-      pageIndex: 1,
-      mypageIndex: 1,
-      imgSource: {
-        "0x7aFB87aE9E37c365955012527f8a9039D6F2CA30": usdcImg,
-        "0xbd51800607E7C743a0e9b0D89D837058F4f42756": eduImg,
-        "0x90f2F4E97Eb6B62D9049D07C6f6877FD171a9a0F": ethImg,
-        "0x3FBA3ef10e452D1e8Cc6C0cf552A8A25b572Ec41": arbImg,
-        "0x104A0F99728D5a79dbEbB4a0a58eCcb456e82411": eduswapImg,
-      },
-      showModal: false,
-      modalData: null,
-    };
-  },
-  setup() {
-    const time = 60;
-    const poolIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    let pools = ref([]);
-    let mypools = ref([]);
-    let loading = ref(false);
-    let account = null;
-    let intervalId = null;
-    let countdownIntervalId = null;
+const poolIndex = ref(0);
+const pageIndex = ref(1);
+const mypageIndex = ref(1);
+const imgSource = ref({
+  "0x7aFB87aE9E37c365955012527f8a9039D6F2CA30": usdcImg,
+  "0xbd51800607E7C743a0e9b0D89D837058F4f42756": eduImg,
+  "0x90f2F4E97Eb6B62D9049D07C6f6877FD171a9a0F": ethImg,
+  "0x3FBA3ef10e452D1e8Cc6C0cf552A8A25b572Ec41": arbImg,
+  "0x104A0F99728D5a79dbEbB4a0a58eCcb456e82411": eduswapImg,
+});
+const showModal = ref(false);
+const modalData = ref(null);
 
-    const checkMetaMaskConnection = async () => {
-      if (typeof window.ethereum !== "undefined") {
-        try {
-          const accounts = await window.ethereum.request({
-            method: "eth_requestAccounts",
-          });
-          return accounts.length > 0;
-        } catch (error) {
-          console.error("Error checking MetaMask connection:", error);
-          return false;
-        }
-      } else {
-        return false;
-      }
-    };
+const pools = ref([]);
+const mypools = ref([]);
+const loading = ref(false);
 
-    const getPoolData = async () => {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const chainId = (await provider.getNetwork()).chainId;
+const time = 60;
+const poolIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-      if (chainId == 656476n) {
-        const contractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
-        const contractABI = [
+let account = null;
+let intervalId = null;
+let countdownIntervalId = null;
+
+const checkMetaMaskConnection = async () => {
+  if (typeof window.ethereum !== "undefined") {
+    try {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      return accounts.length > 0;
+    } catch (error) {
+      console.error("Error checking MetaMask connection:", error);
+      return false;
+    }
+  } else {
+    return false;
+  }
+};
+
+const getPoolData = async () => {
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const chainId = (await provider.getNetwork()).chainId;
+
+  if (chainId == 656476n) {
+    const contractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
+    const contractABI = [
+      {
+        inputs: [
           {
-            inputs: [
+            internalType: "uint256[]",
+            name: "poolIds",
+            type: "uint256[]",
+          },
+          {
+            internalType: "address",
+            name: "user",
+            type: "address",
+          },
+        ],
+        name: "getMyPoolDatas",
+        outputs: [
+          {
+            components: [
               {
-                internalType: "uint256[]",
-                name: "poolIds",
-                type: "uint256[]",
+                internalType: "address",
+                name: "pair",
+                type: "address",
               },
               {
                 internalType: "address",
-                name: "user",
+                name: "token0",
                 type: "address",
               },
-            ],
-            name: "getMyPoolDatas",
-            outputs: [
               {
-                components: [
-                  {
-                    internalType: "address",
-                    name: "pair",
-                    type: "address",
-                  },
-                  {
-                    internalType: "address",
-                    name: "token0",
-                    type: "address",
-                  },
-                  {
-                    internalType: "address",
-                    name: "token1",
-                    type: "address",
-                  },
-                  {
-                    internalType: "string",
-                    name: "name0",
-                    type: "string",
-                  },
-                  {
-                    internalType: "string",
-                    name: "name1",
-                    type: "string",
-                  },
-                  {
-                    internalType: "string",
-                    name: "symbol0",
-                    type: "string",
-                  },
-                  {
-                    internalType: "string",
-                    name: "symbol1",
-                    type: "string",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "decimals0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "decimals1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "reserve0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "reserve1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "balance0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "balance1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "price0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "price1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "supply",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "mysupply",
-                    type: "uint256",
-                  },
-                ],
-                internalType: "struct EduswapV2View.MyPoolData[]",
-                name: "datas",
-                type: "tuple[]",
+                internalType: "address",
+                name: "token1",
+                type: "address",
+              },
+              {
+                internalType: "string",
+                name: "name0",
+                type: "string",
+              },
+              {
+                internalType: "string",
+                name: "name1",
+                type: "string",
+              },
+              {
+                internalType: "string",
+                name: "symbol0",
+                type: "string",
+              },
+              {
+                internalType: "string",
+                name: "symbol1",
+                type: "string",
+              },
+              {
+                internalType: "uint256",
+                name: "decimals0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "decimals1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "reserve0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "reserve1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "balance0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "balance1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "price0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "price1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "supply",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "mysupply",
+                type: "uint256",
               },
             ],
-            stateMutability: "view",
-            type: "function",
+            internalType: "struct EduswapV2View.MyPoolData[]",
+            name: "datas",
+            type: "tuple[]",
           },
+        ],
+        stateMutability: "view",
+        type: "function",
+      },
+      {
+        inputs: [
           {
-            inputs: [
-              {
-                internalType: "uint256[]",
-                name: "poolIds",
-                type: "uint256[]",
-              },
-            ],
-            name: "getPoolDatas",
-            outputs: [
-              {
-                components: [
-                  {
-                    internalType: "address",
-                    name: "pair",
-                    type: "address",
-                  },
-                  {
-                    internalType: "address",
-                    name: "token0",
-                    type: "address",
-                  },
-                  {
-                    internalType: "address",
-                    name: "token1",
-                    type: "address",
-                  },
-                  {
-                    internalType: "string",
-                    name: "name0",
-                    type: "string",
-                  },
-                  {
-                    internalType: "string",
-                    name: "name1",
-                    type: "string",
-                  },
-                  {
-                    internalType: "string",
-                    name: "symbol0",
-                    type: "string",
-                  },
-                  {
-                    internalType: "string",
-                    name: "symbol1",
-                    type: "string",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "decimals0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "decimals1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "reserve0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "reserve1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "price0",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "price1",
-                    type: "uint256",
-                  },
-                  {
-                    internalType: "uint256",
-                    name: "supply",
-                    type: "uint256",
-                  },
-                ],
-                internalType: "struct EduswapV2View.PoolData[]",
-                name: "datas",
-                type: "tuple[]",
-              },
-            ],
-            stateMutability: "view",
-            type: "function",
+            internalType: "uint256[]",
+            name: "poolIds",
+            type: "uint256[]",
           },
-        ];
+        ],
+        name: "getPoolDatas",
+        outputs: [
+          {
+            components: [
+              {
+                internalType: "address",
+                name: "pair",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "token0",
+                type: "address",
+              },
+              {
+                internalType: "address",
+                name: "token1",
+                type: "address",
+              },
+              {
+                internalType: "string",
+                name: "name0",
+                type: "string",
+              },
+              {
+                internalType: "string",
+                name: "name1",
+                type: "string",
+              },
+              {
+                internalType: "string",
+                name: "symbol0",
+                type: "string",
+              },
+              {
+                internalType: "string",
+                name: "symbol1",
+                type: "string",
+              },
+              {
+                internalType: "uint256",
+                name: "decimals0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "decimals1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "reserve0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "reserve1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "price0",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "price1",
+                type: "uint256",
+              },
+              {
+                internalType: "uint256",
+                name: "supply",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct EduswapV2View.PoolData[]",
+            name: "datas",
+            type: "tuple[]",
+          },
+        ],
+        stateMutability: "view",
+        type: "function",
+      },
+    ];
 
-        const contract = new ethers.Contract(
-          contractAddress,
-          contractABI,
-          provider
-        );
+    const contract = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      provider
+    );
 
-        try {
-          const newPools = [];
-          const datas = await contract.getPoolDatas(poolIds);
-          for (let i = 0; i < datas.length; i++) {
-            const [
-              pair,
-              token0,
-              token1,
-              name0,
-              name1,
-              symbol0,
-              symbol1,
-              decimals0,
-              decimals1,
-              reserve0,
-              reserve1,
-              price0,
-              price1,
-              supply,
-            ] = datas[i];
+    try {
+      const newPools = [];
+      const datas = await contract.getPoolDatas(poolIds);
+      for (let i = 0; i < datas.length; i++) {
+        const [
+          pair,
+          token0,
+          token1,
+          name0,
+          name1,
+          symbol0,
+          symbol1,
+          decimals0,
+          decimals1,
+          reserve0,
+          reserve1,
+          price0,
+          price1,
+          supply,
+        ] = datas[i];
 
-            newPools.push({
-              pair: pair.toString(),
-              token0: token0.toString(),
-              token1: token1.toString(),
-              name0: name0.toString(),
-              name1: name1.toString(),
-              symbol0: symbol0.toString(),
-              symbol1: symbol1.toString(),
-              decimals0: decimals0.toString(),
-              decimals1: decimals1.toString(),
-              reserve0: reserve0.toString(),
-              reserve1: reserve1.toString(),
-              price0: price0.toString(),
-              price1: price1.toString(),
-              supply: supply.toString(),
-            });
+        newPools.push({
+          pair: pair.toString(),
+          token0: token0.toString(),
+          token1: token1.toString(),
+          name0: name0.toString(),
+          name1: name1.toString(),
+          symbol0: symbol0.toString(),
+          symbol1: symbol1.toString(),
+          decimals0: decimals0.toString(),
+          decimals1: decimals1.toString(),
+          reserve0: reserve0.toString(),
+          reserve1: reserve1.toString(),
+          price0: price0.toString(),
+          price1: price1.toString(),
+          supply: supply.toString(),
+        });
 
-            pools.value = newPools;
-          }
-        } catch (error) {
-          console.error("Error fetching contract value:", error);
+        pools.value = newPools;
+      }
+    } catch (error) {
+      console.error("Error fetching contract value:", error);
+    }
+
+    const isConnected = checkMetaMaskConnection();
+    if (isConnected) {
+      const signer = await provider.getSigner();
+      account = await signer.getAddress();
+
+      try {
+        const newMyPools = [];
+        const datas = await contract.getMyPoolDatas(poolIds, account);
+        for (let i = 0; i < datas.length; i++) {
+          const [
+            pair,
+            token0,
+            token1,
+            name0,
+            name1,
+            symbol0,
+            symbol1,
+            decimals0,
+            decimals1,
+            reserve0,
+            reserve1,
+            balance0,
+            balance1,
+            price0,
+            price1,
+            supply,
+            mysupply,
+          ] = datas[i];
+
+          newMyPools.push({
+            pair: pair.toString(),
+            token0: token0.toString(),
+            token1: token1.toString(),
+            name0: name0.toString(),
+            name1: name1.toString(),
+            symbol0: symbol0.toString(),
+            symbol1: symbol1.toString(),
+            decimals0: decimals0.toString(),
+            decimals1: decimals1.toString(),
+            reserve0: reserve0.toString(),
+            reserve1: reserve1.toString(),
+            balance0: balance0.toString(),
+            balance1: balance1.toString(),
+            price0: price0.toString(),
+            price1: price1.toString(),
+            supply: supply.toString(),
+            mysupply: mysupply.toString(),
+          });
+
+          mypools.value = newMyPools;
         }
-
-        const isConnected = checkMetaMaskConnection();
-        if (isConnected) {
-          const signer = await provider.getSigner();
-          account = await signer.getAddress();
-
-          try {
-            const newMyPools = [];
-            const datas = await contract.getMyPoolDatas(poolIds, account);
-            for (let i = 0; i < datas.length; i++) {
-              const [
-                pair,
-                token0,
-                token1,
-                name0,
-                name1,
-                symbol0,
-                symbol1,
-                decimals0,
-                decimals1,
-                reserve0,
-                reserve1,
-                balance0,
-                balance1,
-                price0,
-                price1,
-                supply,
-                mysupply,
-              ] = datas[i];
-
-              newMyPools.push({
-                pair: pair.toString(),
-                token0: token0.toString(),
-                token1: token1.toString(),
-                name0: name0.toString(),
-                name1: name1.toString(),
-                symbol0: symbol0.toString(),
-                symbol1: symbol1.toString(),
-                decimals0: decimals0.toString(),
-                decimals1: decimals1.toString(),
-                reserve0: reserve0.toString(),
-                reserve1: reserve1.toString(),
-                balance0: balance0.toString(),
-                balance1: balance1.toString(),
-                price0: price0.toString(),
-                price1: price1.toString(),
-                supply: supply.toString(),
-                mysupply: mysupply.toString(),
-              });
-
-              mypools.value = newMyPools;
-            }
-          } catch (error) {
-            console.error("Error fetching contract value:", error);
-          }
-        }
+      } catch (error) {
+        console.error("Error fetching contract value:", error);
       }
-    };
-
-    onMounted(() => {
-      loading.value = true;
-      setTimeout(() => {
-        loading.value = false;
-      }, 1000);
-      getPoolData();
-      intervalId = setInterval(() => {
-        getPoolData();
-      }, time * 1000);
-    });
-
-    // 컴포넌트가 언마운트될 때 인터벌 정리
-    onUnmounted(() => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-      if (countdownIntervalId) {
-        clearInterval(countdownIntervalId);
-      }
-    });
-
-    return {
-      loading,
-      mypools,
-      pools,
-    };
-  },
-  methods: {
-    updatePoolIndex(index) {
-      this.poolIndex = index;
-    },
-    decreasePageIndex() {
-      if (this.poolIndex == 0) {
-        if (this.pageIndex > 1) this.pageIndex--;
-      } else {
-        if (this.mypageIndex > 1) this.mypageIndex--;
-      }
-    },
-    increasePageIndex() {
-      if (this.poolIndex == 0) {
-        if (Math.floor((this.pools.length - 1) / 4) + 1 > this.pageIndex) {
-          this.pageIndex++;
-        }
-      } else {
-        if (Math.floor((this.mypools.length - 1) / 4) + 1 > this.mypageIndex) {
-          this.mypageIndex++;
-        }
-      }
-    },
-    formattedValueKMB(number) {
-      if (number < 10 ** 3) {
-        return number.toFixed(2);
-      } else if (number < 10 ** 6) {
-        return (number / 10 ** 3).toFixed(2).toString() + "K";
-      } else if (number < 10 ** 9) {
-        return (number / 10 ** 6).toFixed(2).toString() + "M";
-      }
-    },
-    formattedValue(number) {
-      return number.toFixed(2);
-    },
-    closeModal() {
-      this.showModal = false;
-    },
-    clickModal(pairAddress) {
-      this.modalData = this.mypools.filter(
-        (item) => item.pair === pairAddress
-      )[0];
-
-      this.showModal = true;
-    },
-  },
-
-  computed: {
-    endPageIndex() {
-      if (this.poolIndex == 0) {
-        if (this.pools.length == 0) return 1;
-        return Math.floor((this.pools.length - 1) / 4) + 1;
-      } else {
-        if (this.mypools.length == 0) return 1;
-        return Math.floor((this.mypools.length - 1) / 4) + 1;
-      }
-    },
-    filteredPools() {
-      return this.pools.filter(
-        (item, index) =>
-          index >= this.pageIndex * 4 - 4 && index < this.pageIndex * 4
-      );
-    },
-    filteredMyPools() {
-      return this.mypools.filter(
-        (item, index) =>
-          index >= this.mypageIndex * 4 - 4 && index < this.mypageIndex * 4
-      );
-    },
-    currentPageIndex() {
-      if (this.poolIndex == 0) {
-        return this.pageIndex;
-      } else {
-        return this.mypageIndex;
-      }
-    },
-  },
+    }
+  }
 };
+
+const updatePoolIndex = (index) => {
+  poolIndex.value = index;
+};
+const decreasePageIndex = () => {
+  if (poolIndex.value == 0) {
+    if (pageIndex.value > 1) pageIndex.value--;
+  } else {
+    if (mypageIndex.value > 1) mypageIndex.value--;
+  }
+};
+const increasePageIndex = () => {
+  if (poolIndex.value == 0) {
+    if (Math.floor((pools.value.length - 1) / 4) + 1 > pageIndex.value) {
+      pageIndex.value++;
+    }
+  } else {
+    if (Math.floor((mypools.value.length - 1) / 4) + 1 > mypageIndex.value) {
+      mypageIndex.value++;
+    }
+  }
+};
+const formattedValueKMB = (number) => {
+  if (number < 10 ** 3) {
+    return number.toFixed(2);
+  } else if (number < 10 ** 6) {
+    return (number / 10 ** 3).toFixed(2).toString() + "K";
+  } else if (number < 10 ** 9) {
+    return (number / 10 ** 6).toFixed(2).toString() + "M";
+  }
+};
+const formattedValue = (number) => {
+  return number.toFixed(2);
+};
+const closeModal = () => {
+  showModal.value = false;
+};
+const clickModal = (pairAddress) => {
+  modalData.value = mypools.value.filter(
+    (item) => item.pair === pairAddress
+  )[0];
+
+  showModal.value = true;
+};
+
+onMounted(() => {
+  loading.value = true;
+  setTimeout(() => {
+    loading.value = false;
+  }, 1000);
+  getPoolData();
+  intervalId = setInterval(() => {
+    getPoolData();
+  }, time * 1000);
+});
+
+// 컴포넌트가 언마운트될 때 인터벌 정리
+onUnmounted(() => {
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+  if (countdownIntervalId) {
+    clearInterval(countdownIntervalId);
+  }
+});
+
+// computed
+const endPageIndex = computed(() => {
+  if (poolIndex.value == 0) {
+    if (pools.value.length == 0) return 1;
+    return Math.floor((pools.value.length - 1) / 4) + 1;
+  } else {
+    if (mypools.value.length == 0) return 1;
+    return Math.floor((mypools.value.length - 1) / 4) + 1;
+  }
+});
+
+const filteredPools = computed(() => {
+  return pools.value.filter(
+    (item, index) =>
+      index >= pageIndex.value * 4 - 4 && index < pageIndex.value * 4
+  );
+});
+
+const filteredMyPools = computed(() => {
+  return mypools.value.filter(
+    (item, index) =>
+      index >= mypageIndex.value * 4 - 4 && index < mypageIndex.value * 4
+  );
+});
+
+const currentPageIndex = computed(() => {
+  if (poolIndex.value == 0) {
+    return pageIndex.value;
+  } else {
+    return mypageIndex.value;
+  }
+});
 </script>
 
 <style>
