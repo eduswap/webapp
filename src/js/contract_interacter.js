@@ -6,6 +6,7 @@ import {
     useWeb3Modal,
     useWalletInfo,
     useWeb3ModalAccount,
+    useWeb3ModalProvider,
 } from "@web3modal/ethers/vue";
 
 import usdcImg from "@/assets/token/usdc.png";
@@ -218,7 +219,7 @@ async function checkAllowance(tokenAddress, account) {
 
 async function approveToken(tokenAddress) {
     const signer = await provider.getSigner();
-    
+
     const tx = await tokenContract[tokenAddress]
         .connect(signer)
         .approve(
@@ -299,4 +300,5 @@ export {
     useWeb3Modal,
     useWalletInfo,
     useWeb3ModalAccount,
+    useWeb3ModalProvider,
 }
