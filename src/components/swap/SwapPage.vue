@@ -109,7 +109,7 @@
       </div>
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Minimum Received</div>
-        <div class="swap-detials-list-text2">{{ minimumAmount }} WEMIX</div>
+        <div class="swap-detials-list-text2">{{ minimumAmount }} {{ toTokenInfo.symbol }}</div>
       </div>
       <div class="swap-detials-list-wrapper">
         <div class="swap-detials-list-text">Slipage</div>
