@@ -413,12 +413,13 @@ onMounted(async () => {
 
   if (isConnected.value) {
     await updateTokenBalance(address.value);
-    tokenInfos.value = getTokens();
-    const fromBalance = tokenInfos.value[1].balance;
-    const toBalance = tokenInfos.value[0].balance;
-    fromTokenInfo.value.balance = fromBalance;
-    toTokenInfo.value.balance = toBalance;
   }
+  
+  tokenInfos.value = getTokens();
+  const fromBalance = tokenInfos.value[1].balance;
+  const toBalance = tokenInfos.value[0].balance;
+  fromTokenInfo.value.balance = fromBalance;
+  toTokenInfo.value.balance = toBalance;
 });
 
 watch(isConnected, async (newVal) => {
