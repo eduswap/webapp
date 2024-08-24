@@ -134,6 +134,11 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { ethers } from "ethers";
 
+import {
+  useWeb3ModalAccount,
+  // useWeb3ModalProvider,
+} from "@/js/contract_interacter.js";
+
 import Ing from "@/components/common/Ing.vue";
 import PoolModal from "@/components/pool/PoolModal.vue";
 
@@ -163,246 +168,273 @@ const loading = ref(false);
 const time = 60;
 const poolIds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-let account = null;
+const { address, chainId, isConnected } = useWeb3ModalAccount();
+
 let intervalId = null;
 let countdownIntervalId = null;
 
-const checkMetaMaskConnection = async () => {
-  if (typeof window.ethereum !== "undefined") {
-    try {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      return accounts.length > 0;
-    } catch (error) {
-      console.error("Error checking MetaMask connection:", error);
-      return false;
-    }
-  } else {
-    return false;
-  }
-};
-
 const getPoolData = async () => {
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  const chainId = (await provider.getNetwork()).chainId;
+  const provider = new ethers.JsonRpcProvider(
+    "https://rpc.open-campus-codex.gelato.digital"
+  );
 
-  if (chainId == 656476n) {
-    const contractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
-    const contractABI = [
-      {
-        inputs: [
-          {
-            internalType: "uint256[]",
-            name: "poolIds",
-            type: "uint256[]",
-          },
-          {
-            internalType: "address",
-            name: "user",
-            type: "address",
-          },
-        ],
-        name: "getMyPoolDatas",
-        outputs: [
-          {
-            components: [
-              {
-                internalType: "address",
-                name: "pair",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "token0",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "token1",
-                type: "address",
-              },
-              {
-                internalType: "string",
-                name: "name0",
-                type: "string",
-              },
-              {
-                internalType: "string",
-                name: "name1",
-                type: "string",
-              },
-              {
-                internalType: "string",
-                name: "symbol0",
-                type: "string",
-              },
-              {
-                internalType: "string",
-                name: "symbol1",
-                type: "string",
-              },
-              {
-                internalType: "uint256",
-                name: "decimals0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "decimals1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "reserve0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "reserve1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "balance0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "balance1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "price0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "price1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "supply",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "mysupply",
-                type: "uint256",
-              },
-            ],
-            internalType: "struct EduswapV2View.MyPoolData[]",
-            name: "datas",
-            type: "tuple[]",
-          },
-        ],
-        stateMutability: "view",
-        type: "function",
-      },
-      {
-        inputs: [
-          {
-            internalType: "uint256[]",
-            name: "poolIds",
-            type: "uint256[]",
-          },
-        ],
-        name: "getPoolDatas",
-        outputs: [
-          {
-            components: [
-              {
-                internalType: "address",
-                name: "pair",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "token0",
-                type: "address",
-              },
-              {
-                internalType: "address",
-                name: "token1",
-                type: "address",
-              },
-              {
-                internalType: "string",
-                name: "name0",
-                type: "string",
-              },
-              {
-                internalType: "string",
-                name: "name1",
-                type: "string",
-              },
-              {
-                internalType: "string",
-                name: "symbol0",
-                type: "string",
-              },
-              {
-                internalType: "string",
-                name: "symbol1",
-                type: "string",
-              },
-              {
-                internalType: "uint256",
-                name: "decimals0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "decimals1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "reserve0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "reserve1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "price0",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "price1",
-                type: "uint256",
-              },
-              {
-                internalType: "uint256",
-                name: "supply",
-                type: "uint256",
-              },
-            ],
-            internalType: "struct EduswapV2View.PoolData[]",
-            name: "datas",
-            type: "tuple[]",
-          },
-        ],
-        stateMutability: "view",
-        type: "function",
-      },
-    ];
+  const contractAddress = "0x8233B16904ceb6f34E3107464564a444daF4d3f2";
+  const contractABI = [
+    {
+      inputs: [
+        {
+          internalType: "uint256[]",
+          name: "poolIds",
+          type: "uint256[]",
+        },
+        {
+          internalType: "address",
+          name: "user",
+          type: "address",
+        },
+      ],
+      name: "getMyPoolDatas",
+      outputs: [
+        {
+          components: [
+            {
+              internalType: "address",
+              name: "pair",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "token0",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "token1",
+              type: "address",
+            },
+            {
+              internalType: "string",
+              name: "name0",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "name1",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "symbol0",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "symbol1",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "decimals0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "decimals1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "reserve0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "reserve1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "balance0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "balance1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "supply",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "mysupply",
+              type: "uint256",
+            },
+          ],
+          internalType: "struct EduswapV2View.MyPoolData[]",
+          name: "datas",
+          type: "tuple[]",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "uint256[]",
+          name: "poolIds",
+          type: "uint256[]",
+        },
+      ],
+      name: "getPoolDatas",
+      outputs: [
+        {
+          components: [
+            {
+              internalType: "address",
+              name: "pair",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "token0",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "token1",
+              type: "address",
+            },
+            {
+              internalType: "string",
+              name: "name0",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "name1",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "symbol0",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "symbol1",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "decimals0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "decimals1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "reserve0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "reserve1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price0",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "price1",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "supply",
+              type: "uint256",
+            },
+          ],
+          internalType: "struct EduswapV2View.PoolData[]",
+          name: "datas",
+          type: "tuple[]",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+  ];
 
-    const contract = new ethers.Contract(
-      contractAddress,
-      contractABI,
-      provider
-    );
+  const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+  try {
+    const newPools = [];
+    const datas = await contract.getPoolDatas(poolIds);
+    for (let i = 0; i < datas.length; i++) {
+      const [
+        pair,
+        token0,
+        token1,
+        name0,
+        name1,
+        symbol0,
+        symbol1,
+        decimals0,
+        decimals1,
+        reserve0,
+        reserve1,
+        price0,
+        price1,
+        supply,
+      ] = datas[i];
+
+      newPools.push({
+        pair: pair.toString(),
+        token0: token0.toString(),
+        token1: token1.toString(),
+        name0: name0.toString(),
+        name1: name1.toString(),
+        symbol0: symbol0.toString(),
+        symbol1: symbol1.toString(),
+        decimals0: decimals0.toString(),
+        decimals1: decimals1.toString(),
+        reserve0: reserve0.toString(),
+        reserve1: reserve1.toString(),
+        price0: price0.toString(),
+        price1: price1.toString(),
+        supply: supply.toString(),
+      });
+
+      pools.value = newPools;
+    }
+  } catch (error) {
+    console.error("Error fetching contract value:", error);
+  }
+
+  if (isConnected.value) {
 
     try {
-      const newPools = [];
-      const datas = await contract.getPoolDatas(poolIds);
+      const newMyPools = [];
+      const datas = await contract.getMyPoolDatas(poolIds, address.value);
       for (let i = 0; i < datas.length; i++) {
         const [
           pair,
@@ -416,12 +448,15 @@ const getPoolData = async () => {
           decimals1,
           reserve0,
           reserve1,
+          balance0,
+          balance1,
           price0,
           price1,
           supply,
+          mysupply,
         ] = datas[i];
 
-        newPools.push({
+        newMyPools.push({
           pair: pair.toString(),
           token0: token0.toString(),
           token1: token1.toString(),
@@ -433,71 +468,18 @@ const getPoolData = async () => {
           decimals1: decimals1.toString(),
           reserve0: reserve0.toString(),
           reserve1: reserve1.toString(),
+          balance0: balance0.toString(),
+          balance1: balance1.toString(),
           price0: price0.toString(),
           price1: price1.toString(),
           supply: supply.toString(),
+          mysupply: mysupply.toString(),
         });
 
-        pools.value = newPools;
+        mypools.value = newMyPools;
       }
     } catch (error) {
       console.error("Error fetching contract value:", error);
-    }
-
-    const isConnected = checkMetaMaskConnection();
-    if (isConnected) {
-      const signer = await provider.getSigner();
-      account = await signer.getAddress();
-
-      try {
-        const newMyPools = [];
-        const datas = await contract.getMyPoolDatas(poolIds, account);
-        for (let i = 0; i < datas.length; i++) {
-          const [
-            pair,
-            token0,
-            token1,
-            name0,
-            name1,
-            symbol0,
-            symbol1,
-            decimals0,
-            decimals1,
-            reserve0,
-            reserve1,
-            balance0,
-            balance1,
-            price0,
-            price1,
-            supply,
-            mysupply,
-          ] = datas[i];
-
-          newMyPools.push({
-            pair: pair.toString(),
-            token0: token0.toString(),
-            token1: token1.toString(),
-            name0: name0.toString(),
-            name1: name1.toString(),
-            symbol0: symbol0.toString(),
-            symbol1: symbol1.toString(),
-            decimals0: decimals0.toString(),
-            decimals1: decimals1.toString(),
-            reserve0: reserve0.toString(),
-            reserve1: reserve1.toString(),
-            balance0: balance0.toString(),
-            balance1: balance1.toString(),
-            price0: price0.toString(),
-            price1: price1.toString(),
-            supply: supply.toString(),
-            mysupply: mysupply.toString(),
-          });
-
-          mypools.value = newMyPools;
-        }
-      } catch (error) {
-        console.error("Error fetching contract value:", error);
-      }
     }
   }
 };
