@@ -1,6 +1,7 @@
 {
-  "name": "-webapp",
-  "version": "0.0.0",
+  "name": "webapp",
+  "homepage": "https://eduswap.github.io/webapp/",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@web3modal/ethers": "^5.0.11",
