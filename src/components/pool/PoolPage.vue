@@ -48,7 +48,7 @@
           }}
         </div>
         <div class="pool-list-text flex">$1,000</div>
-        <div class="pool-list-btn-wrapper" @click="clickModal(item.pair)">
+        <div class="pool-list-btn-wrapper" @click="clickModal(item.pair, 0)">
           <img src="@/assets/pool-btn.svg" alt="pool-btn" />
         </div>
       </div>
@@ -100,8 +100,8 @@
         </div>
         <!-- <div class="pool-list-text flex">$1,000</div> -->
         <div class="pool-list-btn-wrapper">
-          <div class="pool-list-btn">+</div>
-          <div class="pool-list-btn">-</div>
+          <div class="pool-list-btn" @click="clickModal(item.pair, 0)">+</div>
+          <div class="pool-list-btn" @click="clickModal(item.pair, 1)">-</div>
         </div>
       </div>
     </div>
@@ -127,7 +127,7 @@
   </div>
   <Ing v-if="loading" />
 
-  <PoolModal v-if="showModal" @closeModal="closeModal" :pooldata="modalData" />
+  <PoolModal v-if="showModal" @closeModal="closeModal" :pooldata="modalData" :modalIndex="modalIndex"/>
 </template>
 
 <script setup>
@@ -160,6 +160,7 @@ const imgSource = ref({
 });
 const showModal = ref(false);
 const modalData = ref(null);
+const modalIndex = ref(0);
 
 const pools = ref([]);
 const mypools = ref([]);
@@ -431,7 +432,6 @@ const getPoolData = async () => {
   }
 
   if (isConnected.value) {
-
     try {
       const newMyPools = [];
       const datas = await contract.getMyPoolDatas(poolIds, address.value);
@@ -520,7 +520,8 @@ const formattedValue = (number) => {
 const closeModal = () => {
   showModal.value = false;
 };
-const clickModal = (pairAddress) => {
+const clickModal = (pairAddress, index) => {
+  modalIndex.value = index;
   modalData.value = mypools.value.filter(
     (item) => item.pair === pairAddress
   )[0];

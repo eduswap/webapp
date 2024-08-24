@@ -221,6 +221,10 @@ export default {
     pooldata: {
       type: Object,
     },
+    modalIndex: {
+      type: Number,
+      default: () => 0,
+    },
   },
   data() {
     return {
@@ -367,7 +371,7 @@ export default {
     },
     async tx() {
       this.txStatus = "ing";
-      
+
       const { walletProvider } = useWeb3ModalProvider();
       if (walletProvider.value) {
         this.showConfirmModal = true;
@@ -1377,6 +1381,10 @@ export default {
         }
       }
     },
+  },
+  mounted() {
+    console.log("pool modal", this.btnIndex, this.modalIndex);
+    this.btnIndex = this.modalIndex;
   },
   computed: {
     btnName() {
