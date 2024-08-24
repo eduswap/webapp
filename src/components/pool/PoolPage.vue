@@ -521,12 +521,14 @@ const closeModal = () => {
   showModal.value = false;
 };
 const clickModal = (pairAddress, index) => {
-  modalIndex.value = index;
-  modalData.value = mypools.value.filter(
-    (item) => item.pair === pairAddress
-  )[0];
-
-  showModal.value = true;
+  if (isConnected.value) {
+    modalIndex.value = index;
+    modalData.value = mypools.value.filter(
+      (item) => item.pair === pairAddress
+    )[0];
+  
+    showModal.value = true;
+  }
 };
 
 onMounted(() => {

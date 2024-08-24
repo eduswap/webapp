@@ -119,15 +119,19 @@ const modal = createWeb3Modal({
 
 function attach() {
     const walletProvider = modal.getWalletProvider();
+    
+    if (viewContract == null) {
+        const viewProvider = new ethers.JsonRpcProvider(
+            "https://rpc.open-campus-codex.gelato.digital"
+        );
+        viewContract = new ethers.Contract(viewContractAddress, viewArtifacts.abi, viewProvider);
+    }
 
     if (walletProvider != undefined) {
         if (provider == null) {
             provider = new ethers.BrowserProvider(walletProvider);
         }
 
-        if (viewContract == null) {
-            viewContract = new ethers.Contract(viewContractAddress, viewArtifacts.abi, provider);
-        }
 
         if (routerContract == null) {
             routerContract = new ethers.Contract(routerContractAddress, routerArtifacts.abi, provider);
@@ -159,6 +163,8 @@ async function updateTokenBalance(userAddress) {
 }
 
 async function getAmountsOutInfo(amountIn, tokenIn, tokenOut) {
+    attach();
+
     if (amountIn == 0) return { amountOut: null, spotPrice: null }
     const fromDecimals = tokens.filter((token) => token.address == tokenIn)[0].decimals;
     const toDecimals = tokens.filter((token) => token.address == tokenOut)[0].decimals;
@@ -182,6 +188,8 @@ async function getAmountsOutInfo(amountIn, tokenIn, tokenOut) {
 }
 
 async function getAmountsInInfo(amountOut, tokenIn, tokenOut) {
+    attach();
+   
     if (amountOut == 0) return { amountIn: null, spotPrice: null }
     const fromDecimals = tokens.filter((token) => token.address == tokenIn)[0].decimals;
     const toDecimals = tokens.filter((token) => token.address == tokenOut)[0].decimals;
