@@ -54,7 +54,10 @@
                   {{ pooldata.symbol0 }}
                 </div>
                 <div class="pool-modal-input-token-name-text">
-                  {{ pooldata.name0 }}
+                  {{
+                    getTokens().find((item) => item.address == pooldata.token0)
+                      .name
+                  }}
                 </div>
               </div>
             </div>
@@ -91,7 +94,10 @@
                   {{ pooldata.symbol1 }}
                 </div>
                 <div class="pool-modal-input-token-name-text">
-                  {{ pooldata.name1 }}
+                  {{
+                    getTokens().find((item) => item.address == pooldata.token1)
+                      .name
+                  }}
                 </div>
               </div>
             </div>
@@ -138,7 +144,7 @@
             <div class="pool-modal-input-right-wrapper2">
               <div class="pool-modal-value-percentage-wrapper">
                 <input
-                  class="pool-modal-value"
+                  class="pool-modal-value2"
                   type="number"
                   max="100"
                   v-model="amountlp"
@@ -198,6 +204,12 @@ import ethImg from "@/assets/token/eth.png";
 import arbImg from "@/assets/token/arb.png";
 import eduswapImg from "@/assets/token/eduswap.png";
 import { ethers } from "ethers";
+
+import {
+  getTokens,
+  useWeb3ModalAccount,
+  useWeb3ModalProvider,
+} from "@/js/contract_interacter.js";
 
 import ConfirmTransaction from "@/components/common/ConfirmTransaction.vue";
 
@@ -267,6 +279,9 @@ export default {
     },
     maxAmountLp() {
       this.amountlp = 100;
+    },
+    getTokens() {
+      return getTokens();
     },
     async checkAllowance() {
       this.isApproved = await this.getAllowance();
@@ -1646,7 +1661,8 @@ export default {
   line-height: normal;
 }
 
-.pool-modal-value {
+.pool-modal-value,
+.pool-modal-value2 {
   height: 19px;
   align-self: stretch;
 
@@ -1663,13 +1679,19 @@ export default {
   background-color: #181d2f;
   border: none;
 }
+.pool-modal-value2 {
+  width: 68px;
+}
 
 .pool-modal-value::-webkit-inner-spin-button,
-.pool-modal-value::-webkit-outer-spin-button {
+.pool-modal-value::-webkit-outer-spin-button,
+.pool-modal-value2::-webkit-inner-spin-button,
+.pool-modal-value2::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
 
-.pool-modal-value:focus {
+.pool-modal-value:focus,
+.pool-modal-value2:focus {
   outline: none;
   border: none;
 }
